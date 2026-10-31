@@ -8,53 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --brand-purple: #7414DC;
-            --brand-gold: #F4A81E;
-            --brand-green: #80BE43;
-            --brand-bg: #ffe7e5;
-        }
-
-        html, body {
-            background-color: var(--brand-bg) !important;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-        }
-
-        /* Ensure 48px minimum touch targets */
-        button, input, select {
-            min-height: 48px;
-        }
-
-        .bg-brand-purple { background-color: #7414DC; }
-        .text-brand-purple { color: #7414DC; }
-        .border-brand-purple { border-color: #7414DC; }
-
-        .bg-brand-gold { background-color: #F4A81E; }
-        .text-brand-gold { color: #F4A81E; }
-        
-        .bg-brand-green { background-color: #80BE43; }
-        .text-brand-green { color: #80BE43; }
-
-        /* Custom SVG Icon Helper Styles - Standardized size & flex alignment */
-        .nav-icon-svg {
-            width: 1.125rem;
-            height: 1.125rem;
-            fill: currentColor;
-            display: block;
-        }
-
-        /* Custom Scrollbars */
-        ::-webkit-scrollbar {
-            width: 4px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(116, 20, 220, 0.2);
-            border-radius: 4px;
-        }
-    </style>
+    <!-- Custom Testing CSS -->
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="min-h-screen text-gray-800 flex flex-col justify-between antialiased selection:bg-purple-200">
 
@@ -71,23 +26,18 @@
         </div>
 
         <div class="flex items-center space-x-2">
-            <!-- Language Switcher Sliding Pill (Wider) -->
+            <!-- Language Switcher Sliding Pill -->
             <div class="bg-black/20 backdrop-blur-sm border border-white/20 rounded-full p-1 flex items-center relative cursor-pointer select-none shadow-inner" onclick="toggleLanguage()">
-                <!-- Sliding Background Indicator -->
                 <div id="lang-slider-pill" class="absolute top-1 bottom-1 left-[62px] w-[56px] bg-[#F4A81E] rounded-full transition-all duration-300 ease-out shadow-md"></div>
-                
-                <!-- English Option -->
                 <button id="lang-btn-en" class="relative z-10 w-[56px] py-1 text-[11px] font-black tracking-wider transition-colors duration-300 text-purple-200 flex items-center justify-center gap-1">
                     <span>🇬🇧</span> EN
                 </button>
-                
-                <!-- Khmer Option -->
                 <button id="lang-btn-kh" class="relative z-10 w-[56px] py-1 text-[11px] font-black tracking-wider transition-colors duration-300 text-gray-900 flex items-center justify-center gap-1">
                     <span>🇰🇭</span> KH
                 </button>
             </div>
 
-            <!-- Cart Button in Header -->
+            <!-- Cart Button -->
             <button onclick="toggleCartModal(true)" class="relative w-10 h-10 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition-all active:scale-95">
                 <i class="fa-solid fa-cart-shopping text-white text-base"></i>
                 <span id="header-cart-badge" class="absolute -top-1 -right-1 bg-[#F4A81E] text-gray-900 font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center border-2 border-[#7414DC] shadow-sm">0</span>
@@ -97,137 +47,73 @@
 
     <!-- ================= MAIN SCROLLABLE CONTENT AREA ================= -->
     <main class="w-full max-w-lg mx-auto flex-1 pt-20 pb-28 px-4 space-y-6">
-
-        <!-- TAB 1: HOME PAGE -->
         <section id="tab-home-view" class="space-y-6">
-            <!-- Hero Banner -->
             <div class="rounded-3xl bg-gradient-to-br from-[#7414DC] via-purple-800 to-[#7414DC] text-white p-6 shadow-xl relative overflow-hidden">
-                <div class="absolute -right-6 -bottom-6 text-white/10 text-9xl font-black pointer-events-none">
-                    <i class="fa-solid fa-compass"></i>
-                </div>
                 <span class="inline-block px-3 py-1 bg-[#80BE43] text-gray-900 font-black text-[10px] rounded-full uppercase tracking-wider mb-3">Welcome Scouts</span>
                 <h2 class="text-2xl font-black leading-tight mb-2">Build Custom Scout Gear Instantly</h2>
                 <p class="text-xs text-purple-200 leading-relaxed mb-4">Design your own customized Scout Woggles with styles like Lis, Romdoul & Angkor, complete with name tags and color choices.</p>
-                
                 <button onclick="switchTab('woggle')" class="px-5 py-3 bg-[#F4A81E] text-gray-900 font-black text-xs rounded-2xl shadow-lg active:scale-95 transition-all flex items-center gap-2">
                     <span>Create Custom Woggle</span> <i class="fa-solid fa-arrow-right"></i>
                 </button>
             </div>
-
-            <!-- Quick Categories -->
-            <div class="space-y-3">
-                <h3 class="text-xs font-black uppercase tracking-wider text-purple-900 px-1">Featured Categories</h3>
-                <div class="grid grid-cols-4 gap-2">
-                    <div onclick="switchTab('woggle')" class="bg-white p-3 rounded-2xl border border-purple-100 shadow-sm flex flex-col items-center text-center cursor-pointer active:scale-95 transition-all">
-                        <div class="w-9 h-9 rounded-xl bg-purple-50 text-[#7414DC] flex items-center justify-center text-base mb-1.5">
-                            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12.75 2.25c-.41 0-.75.34-.75.75v3.19c-.83-.43-1.84-.52-2.76-.23-1.34.42-2.34 1.54-2.58 2.93-.15.86.08 1.73.61 2.4.52.66 1.3 1.05 2.14 1.08.38.01.76-.06 1.12-.2.4.67 1.03 1.18 1.77 1.43v.8c-1.32.18-2.55.77-3.5 1.68C7.45 17.41 6.5 19.38 6.5 21.5c0 .41.34.75.75.75s.75-.34.75-.75c0-1.74.78-3.32 2.06-4.38.9-.74 2.04-1.17 3.19-1.22 1.15.05 2.29.48 3.19 1.22 1.28 1.06 2.06 2.64 2.06 4.38 0 .41.34.75.75.75s.75-.34.75-.75c0-2.12-.95-4.09-2.8-5.42-.95-.91-2.18-1.5-3.5-1.68v-.8c.74-.25 1.37-.76 1.77-1.43.36.14.74.21 1.12.2.84-.03 1.62-.42 2.14-1.08.53-.67.76-1.54.61-2.4-.24-1.39-1.24-2.51-2.58-2.93-.92-.29-1.93-.2-2.76.23V3c0-.41-.34-.75-.75-.75zM12 7.75c.97 0 1.75.78 1.75 1.75s-.78 1.75-1.75 1.75S10.25 10.47 10.25 9.5 11.03 7.75 12 7.75z"/></svg>
-                        </div>
-                        <span class="font-bold text-[11px] text-gray-800 leading-tight">Woggles</span>
-                    </div>
-
-                    <div onclick="switchTab('shop')" class="bg-white p-3 rounded-2xl border border-purple-100 shadow-sm flex flex-col items-center text-center cursor-pointer active:scale-95 transition-all">
-                        <div class="w-9 h-9 rounded-xl bg-purple-50 text-[#7414DC] flex items-center justify-center text-base mb-1.5">
-                            <i class="fa-solid fa-store"></i>
-                        </div>
-                        <span class="font-bold text-[11px] text-gray-800 leading-tight">Shop</span>
-                    </div>
-
-                    <div onclick="switchTab('pin')" class="bg-white p-3 rounded-2xl border border-purple-100 shadow-sm flex flex-col items-center text-center cursor-pointer active:scale-95 transition-all">
-                        <div class="w-9 h-9 rounded-xl bg-amber-50 text-[#F4A81E] flex items-center justify-center text-base mb-1.5">
-                            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2C8.7 2 6 4.7 6 8C6 11.5 9 14.5 11 16.2V21C11 21.6 11.4 22 12 22C12.6 22 13 21.6 13 21V16.2C15 14.5 18 11.5 18 8C18 4.7 15.3 2 12 2ZM12 14.2C10.3 12.7 8 10.3 8 8C8 5.8 9.8 4 12 4C14.2 4 16 5.8 16 8C16 10.3 13.7 12.7 12 14.2ZM12 6C10.9 6 10 6.9 10 8C10 9.1 10.9 10 12 10C13.1 10 14 9.1 14 8C14 6.9 13.1 6 12 6Z"/></svg>
-                        </div>
-                        <span class="font-bold text-[11px] text-gray-800 leading-tight">Pins</span>
-                    </div>
-
-                    <div onclick="switchTab('badge')" class="bg-white p-3 rounded-2xl border border-purple-100 shadow-sm flex flex-col items-center text-center cursor-pointer active:scale-95 transition-all">
-                        <div class="w-9 h-9 rounded-xl bg-emerald-50 text-[#80BE43] flex items-center justify-center text-base mb-1.5">
-                            <i class="fa-solid fa-award"></i>
-                        </div>
-                        <span class="font-bold text-[11px] text-gray-800 leading-tight">Badges</span>
-                    </div>
-                </div>
-            </div>
         </section>
 
-        <!-- NEW TAB: WOGGLE PAGE -->
         <section id="tab-woggle-view" class="space-y-5 hidden">
             <div class="flex items-center justify-between px-1">
                 <h2 class="text-xs font-black uppercase tracking-wider text-purple-900">Scout Woggles Collection</h2>
                 <span class="text-[11px] text-gray-500 font-semibold">Normal & Custom Woggles</span>
             </div>
-
-            <!-- Products List for Woggles -->
-            <div class="grid grid-cols-2 gap-3" id="woggle-products-grid">
-                <!-- Dynamically Rendered Woggles -->
-            </div>
+            <div class="grid grid-cols-2 gap-3" id="woggle-products-grid"></div>
         </section>
 
-        <!-- TAB 2: SHOP PAGE -->
         <section id="tab-shop-view" class="space-y-5 hidden">
             <div class="flex items-center justify-between px-1">
                 <h2 class="text-xs font-black uppercase tracking-wider text-purple-900">General Gear</h2>
                 <span class="text-[11px] text-gray-500 font-semibold">Standard Accessories</span>
             </div>
-
-            <!-- Products List -->
-            <div class="grid grid-cols-2 gap-3" id="shop-products-grid">
-                <!-- Dynamically Rendered -->
-            </div>
+            <div class="grid grid-cols-2 gap-3" id="shop-products-grid"></div>
         </section>
 
-        <!-- TAB 3: PIN PAGE -->
         <section id="tab-pin-view" class="space-y-5 hidden">
             <div class="flex items-center justify-between px-1">
                 <h2 class="text-xs font-black uppercase tracking-wider text-purple-900">Scout Pins</h2>
                 <span class="text-[11px] text-gray-500 font-semibold">Official Pins</span>
             </div>
-            
-            <div class="grid grid-cols-2 gap-3" id="pin-products-grid">
-                <!-- Dynamically Rendered Pins -->
-            </div>
+            <div class="grid grid-cols-2 gap-3" id="pin-products-grid"></div>
         </section>
 
-        <!-- TAB 4: BADGE PAGE -->
         <section id="tab-badge-view" class="space-y-5 hidden">
             <div class="flex items-center justify-between px-1">
                 <h2 class="text-xs font-black uppercase tracking-wider text-purple-900">Scout Badges</h2>
                 <span class="text-[11px] text-gray-500 font-semibold">Patches & Insignia</span>
             </div>
-            
-            <div class="grid grid-cols-2 gap-3" id="badge-products-grid">
-                <!-- Dynamically Rendered Badges -->
-            </div>
+            <div class="grid grid-cols-2 gap-3" id="badge-products-grid"></div>
         </section>
-
     </main>
 
-    <!-- ================= FIXED BOTTOM NAVIGATION TAB BAR ================= -->
-    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-purple-100 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-2 py-2">
+    <!-- ================= BOTTOM NAVIGATION BAR ================= -->
+    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-purple-100 shadow-md px-2 py-2">
         <div class="max-w-lg mx-auto grid grid-cols-5 gap-0.5">
             <button onclick="switchTab('home')" id="nav-btn-home" class="py-1.5 flex flex-col items-center justify-center text-center transition-all rounded-2xl text-[#7414DC]">
                 <div class="h-5 flex items-center justify-center mb-0.5"><i class="fa-solid fa-house text-base"></i></div>
                 <span class="text-[10px] font-bold">Home</span>
             </button>
-
             <button onclick="switchTab('shop')" id="nav-btn-shop" class="py-1.5 flex flex-col items-center justify-center text-center transition-all rounded-2xl text-gray-400 hover:text-[#7414DC]">
                 <div class="h-5 flex items-center justify-center mb-0.5"><i class="fa-solid fa-store text-base"></i></div>
                 <span class="text-[10px] font-bold">Shop</span>
             </button>
-
             <button onclick="switchTab('woggle')" id="nav-btn-woggle" class="py-1.5 flex flex-col items-center justify-center text-center transition-all rounded-2xl text-gray-400 hover:text-[#7414DC]">
                 <div class="h-5 flex items-center justify-center mb-0.5">
                     <svg class="nav-icon-svg" viewBox="0 0 24 24"><path d="M12.75 2.25c-.41 0-.75.34-.75.75v3.19c-.83-.43-1.84-.52-2.76-.23-1.34.42-2.34 1.54-2.58 2.93-.15.86.08 1.73.61 2.4.52.66 1.3 1.05 2.14 1.08.38.01.76-.06 1.12-.2.4.67 1.03 1.18 1.77 1.43v.8c-1.32.18-2.55.77-3.5 1.68C7.45 17.41 6.5 19.38 6.5 21.5c0 .41.34.75.75.75s.75-.34.75-.75c0-1.74.78-3.32 2.06-4.38.9-.74 2.04-1.17 3.19-1.22 1.15.05 2.29.48 3.19 1.22 1.28 1.06 2.06 2.64 2.06 4.38 0 .41.34.75.75.75s.75-.34.75-.75c0-2.12-.95-4.09-2.8-5.42-.95-.91-2.18-1.5-3.5-1.68v-.8c.74-.25 1.37-.76 1.77-1.43.36.14.74.21 1.12.2.84-.03 1.62-.42 2.14-1.08.53-.67.76-1.54.61-2.4-.24-1.39-1.24-2.51-2.58-2.93-.92-.29-1.93-.2-2.76.23V3c0-.41-.34-.75-.75-.75zM12 7.75c.97 0 1.75.78 1.75 1.75s-.78 1.75-1.75 1.75S10.25 10.47 10.25 9.5 11.03 7.75 12 7.75z"/></svg>
                 </div>
                 <span class="text-[10px] font-bold">Woggle</span>
             </button>
-
             <button onclick="switchTab('pin')" id="nav-btn-pin" class="py-1.5 flex flex-col items-center justify-center text-center transition-all rounded-2xl text-gray-400 hover:text-[#7414DC]">
                 <div class="h-5 flex items-center justify-center mb-0.5">
                     <svg class="nav-icon-svg" viewBox="0 0 24 24"><path d="M12 2C8.7 2 6 4.7 6 8C6 11.5 9 14.5 11 16.2V21C11 21.6 11.4 22 12 22C12.6 22 13 21.6 13 21V16.2C15 14.5 18 11.5 18 8C18 4.7 15.3 2 12 2ZM12 14.2C10.3 12.7 8 10.3 8 8C8 5.8 9.8 4 12 4C14.2 4 16 5.8 16 8C16 10.3 13.7 12.7 12 14.2ZM12 6C10.9 6 10 6.9 10 8C10 9.1 10.9 10 12 10C13.1 10 14 9.1 14 8C14 6.9 13.1 6 12 6Z"/></svg>
                 </div>
                 <span class="text-[10px] font-bold">Pin</span>
             </button>
-
             <button onclick="switchTab('badge')" id="nav-btn-badge" class="py-1.5 flex flex-col items-center justify-center text-center transition-all rounded-2xl text-gray-400 hover:text-[#7414DC]">
                 <div class="h-5 flex items-center justify-center mb-0.5"><i class="fa-solid fa-shield-halved text-base"></i></div>
                 <span class="text-[10px] font-bold">Badge</span>
@@ -235,496 +121,56 @@
         </div>
     </nav>
 
-    <!-- ================= MODAL: SCOUT WOGGLE CUSTOMIZER ================= -->
+    <!-- Customizer Modal -->
     <div id="woggle-customizer-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center hidden">
-        <div class="bg-white w-full max-w-lg rounded-t-3xl max-h-[90vh] overflow-y-auto p-5 space-y-5 animate-slide-up">
-            
-            <!-- Modal Header -->
-            <div class="flex items-center justify-between pb-3 border-b border-gray-100">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-2xl bg-amber-100 text-[#F4A81E] flex items-center justify-center font-bold text-lg">
-                        <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12.75 2.25c-.41 0-.75.34-.75.75v3.19c-.83-.43-1.84-.52-2.76-.23-1.34.42-2.34 1.54-2.58 2.93-.15.86.08 1.73.61 2.4.52.66 1.3 1.05 2.14 1.08.38.01.76-.06 1.12-.2.4.67 1.03 1.18 1.77 1.43v.8c-1.32.18-2.55.77-3.5 1.68C7.45 17.41 6.5 19.38 6.5 21.5c0 .41.34.75.75.75s.75-.34.75-.75c0-1.74.78-3.32 2.06-4.38.9-.74 2.04-1.17 3.19-1.22 1.15.05 2.29.48 3.19 1.22 1.28 1.06 2.06 2.64 2.06 4.38 0 .41.34.75.75.75s.75-.34.75-.75c0-2.12-.95-4.09-2.8-5.42-.95-.91-2.18-1.5-3.5-1.68v-.8c.74-.25 1.37-.76 1.77-1.43.36.14.74.21 1.12.2.84-.03 1.62-.42 2.14-1.08.53-.63.76-1.54.61-2.4-.24-1.39-1.24-2.51-2.58-2.93-.92-.29-1.93-.2-2.76.23V3c0-.41-.34-.75-.75-.75zM12 7.75c.97 0 1.75.78 1.75 1.75s-.78 1.75-1.75 1.75S10.25 10.47 10.25 9.5 11.03 7.75 12 7.75z"/></svg>
-                    </div>
-                    <div>
-                        <h3 class="font-extrabold text-gray-900 text-sm">Custom Scout Woggle Name</h3>
-                        <p class="text-xs text-gray-500 font-semibold">$5.00 • Personalize Style & Name</p>
-                    </div>
-                </div>
-                <button onclick="closeWoggleModal()" class="w-9 h-9 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center">
-                    <i class="fa-solid fa-xmark text-sm"></i>
-                </button>
+        <div class="bg-white w-full max-w-lg rounded-t-3xl p-5 space-y-4 animate-slide-up">
+            <div class="flex justify-between items-center pb-2 border-b">
+                <h3 class="font-bold text-sm">Custom Scout Woggle</h3>
+                <button onclick="closeWoggleModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
-
-            <!-- Step 1: Style -->
             <div>
-                <label class="block text-[11px] font-black text-gray-500 uppercase tracking-wider mb-2">1. Choose Style</label>
-                <div class="grid grid-cols-3 gap-2" id="woggle-style-selector">
-                    <!-- Populated via JavaScript -->
-                </div>
+                <label class="text-[11px] font-bold text-gray-500 uppercase block mb-1">1. Style</label>
+                <div id="woggle-style-selector" class="grid grid-cols-3 gap-2"></div>
             </div>
-
-            <!-- Step 2: Color -->
             <div>
-                <label class="block text-[11px] font-black text-gray-500 uppercase tracking-wider mb-2">2. Choose Color</label>
-                <div class="grid grid-cols-3 gap-2" id="woggle-color-selector">
-                    <!-- Populated via JavaScript -->
-                </div>
+                <label class="text-[11px] font-bold text-gray-500 uppercase block mb-1">2. Color</label>
+                <div id="woggle-color-selector" class="grid grid-cols-3 gap-2"></div>
             </div>
-
-            <!-- Step 3: Custom Name -->
             <div>
-                <label class="block text-[11px] font-black text-gray-500 uppercase tracking-wider mb-2">3. Custom Name</label>
-                <input type="text" id="woggle-custom-name" placeholder="Enter scout name (e.g., Votey)" 
-                    class="w-full px-4 py-3 bg-purple-50/50 border border-purple-200 rounded-2xl text-sm font-bold text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7414DC]">
+                <label class="text-[11px] font-bold text-gray-500 uppercase block mb-1">3. Name</label>
+                <input type="text" id="woggle-custom-name" placeholder="Enter name" class="w-full px-3 py-2 border rounded-xl text-sm">
             </div>
-
-            <!-- Action Button -->
-            <button onclick="addWoggleToCart()" class="w-full py-4 bg-[#7414DC] hover:bg-purple-800 text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-purple-200 active:scale-95 transition-all flex items-center justify-center gap-2">
-                <i class="fa-solid fa-plus"></i> Add Customized Woggle ($5.00)
-            </button>
+            <button id="btn-add-custom-woggle" class="w-full py-3 bg-[#7414DC] text-white font-bold rounded-xl text-xs">Add Woggle ($5.00)</button>
         </div>
     </div>
 
-    <!-- ================= MODAL: CART & RECEIPT GENERATOR ================= -->
+    <!-- Cart Modal -->
     <div id="cart-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center hidden">
-        <div class="bg-white w-full max-w-lg rounded-t-3xl max-h-[92vh] flex flex-col overflow-hidden animate-slide-up">
-            
-            <!-- Cart Header -->
-            <div class="px-5 py-4 bg-[#7414DC] text-white flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-cart-shopping"></i>
-                    <h3 class="font-extrabold text-sm">Your Order Cart</h3>
-                </div>
-                <button onclick="toggleCartModal(false)" class="w-8 h-8 bg-white/20 text-white rounded-full flex items-center justify-center">
-                    <i class="fa-solid fa-xmark text-sm"></i>
-                </button>
+        <div class="bg-white w-full max-w-lg rounded-t-3xl max-h-[90vh] flex flex-col overflow-hidden animate-slide-up">
+            <div class="px-5 py-3 bg-[#7414DC] text-white flex justify-between items-center">
+                <h3 class="font-bold text-sm">Cart & Receipt</h3>
+                <button onclick="toggleCartModal(false)"><i class="fa-solid fa-xmark"></i></button>
             </div>
-
-            <!-- Cart Body Scroll -->
-            <div class="p-5 flex-1 overflow-y-auto space-y-5">
-
-                <!-- Cart Items List -->
-                <div class="space-y-3">
-                    <h4 class="text-xs font-black uppercase tracking-wider text-purple-900">Selected Items</h4>
-                    <div id="cart-items-container" class="space-y-2">
-                        <!-- Dynamic Cart List -->
-                    </div>
+            <div class="p-4 flex-1 overflow-y-auto space-y-4">
+                <div id="cart-items-container" class="space-y-2"></div>
+                <div class="bg-gray-900 text-emerald-400 p-3 rounded-xl font-mono text-xs">
+                    <pre id="receipt-formatted-output" class="whitespace-pre-wrap">Cart is empty.</pre>
                 </div>
-
-                <!-- Receipt Output & One-Tap Copy Section -->
-                <div class="space-y-3 pt-3 border-t border-gray-100">
-                    <div class="flex items-center justify-between">
-                        <h4 class="text-xs font-black uppercase tracking-wider text-purple-900">Formatted Receipt</h4>
-                        <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">Color Sorted</span>
-                    </div>
-
-                    <div class="bg-gray-900 text-emerald-400 p-4 rounded-2xl font-mono text-xs leading-relaxed overflow-x-auto shadow-inner border border-gray-800">
-                        <pre id="receipt-formatted-output" class="whitespace-pre-wrap text-[11px]">Cart is empty.</pre>
-                    </div>
-
-                    <button onclick="copyReceiptToClipboard()" id="copy-receipt-btn" class="w-full py-3.5 bg-[#80BE43] hover:bg-emerald-600 text-gray-900 font-extrabold text-xs rounded-2xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-copy text-sm"></i> <span id="copy-btn-label">1-Tap Copy Receipt</span>
-                    </button>
-                </div>
+                <button id="copy-receipt-btn" class="w-full py-3 bg-[#80BE43] text-gray-900 font-bold rounded-xl text-xs">Copy Receipt</button>
             </div>
-
-            <!-- Cart Footer Total -->
-            <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-                <div>
-                    <span class="text-[10px] font-black uppercase tracking-wider text-gray-400">Total Price</span>
-                    <p class="text-xl font-black text-gray-900" id="cart-total-price">$0.00</p>
-                </div>
-                <button onclick="clearCart()" class="px-4 py-2.5 bg-rose-100 text-rose-700 font-bold text-xs rounded-xl hover:bg-rose-200 transition-all">
-                    Clear Cart
-                </button>
+            <div class="p-3 bg-gray-50 border-t flex justify-between items-center">
+                <p class="font-black text-lg" id="cart-total-price">$0.00</p>
+                <button id="btn-clear-cart" class="px-3 py-1.5 bg-rose-100 text-rose-700 font-bold text-xs rounded-lg">Clear Cart</button>
             </div>
         </div>
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300 w-max max-w-[90vw]">
-        <i class="fa-solid fa-circle-check text-[#80BE43] text-sm"></i>
+    <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-4 py-2 rounded-xl text-xs font-semibold opacity-0 pointer-events-none transition-all duration-300">
         <span id="toast-text">Action completed</span>
     </div>
 
-    <!-- ================= JAVASCRIPT LOGIC ================= -->
-    <script>
-        // Data Catalogs
-        const WOGGLE_PRODUCTS = [
-            { id: 'w1', name: 'Scout Woggle Name', price: 5.00, svgIcon: 'woggle', isCustom: true },
-            { id: 'w2', name: 'Normal Lis Woggle', price: 3.50, svgIcon: 'woggle', isCustom: false },
-            { id: 'w3', name: 'Normal Romdoul Woggle', price: 3.50, svgIcon: 'woggle', isCustom: false },
-            { id: 'w4', name: 'Normal Angkor Woggle', price: 3.50, svgIcon: 'woggle', isCustom: false }
-        ];
-
-        const SHOP_PRODUCTS = [
-            { id: 's1', name: 'Custom T-Shirt', price: 15.00, icon: 'fa-shirt', isCustom: false },
-            { id: 's2', name: 'Scout Keychain', price: 3.50, icon: 'fa-[#7414DC]', icon: 'fa-key', isCustom: false },
-            { id: 's3', name: 'Coffee Mug', price: 12.00, icon: 'fa-mug-hot', isCustom: false },
-            { id: 's4', name: 'Custom Cap', price: 10.00, icon: 'fa-hat-cowboy', isCustom: false }
-        ];
-
-        const PIN_PRODUCTS = [
-            { id: 'p1', name: 'National Scout Pin', price: 2.50, svgIcon: 'pin', isCustom: false },
-            { id: 'p2', name: 'Wood Badge Pin', price: 4.00, svgIcon: 'pin', isCustom: false },
-            { id: 'p3', name: 'Scout Promise Pin', price: 3.00, svgIcon: 'pin', isCustom: false }
-        ];
-
-        const BADGE_PRODUCTS = [
-            { id: 'b1', name: 'Membership Badge', price: 2.00, icon: 'fa-shield-halved', isCustom: false },
-            { id: 'b2', name: 'First Aid Badge', price: 2.50, icon: 'fa-kit-medical', isCustom: false },
-            { id: 'b3', name: 'Campcraft Badge', price: 2.50, icon: 'fa-tent', isCustom: false }
-        ];
-
-        const WOGGLE_STYLES = ["Lis", "Romdoul", "Angkor"];
-        const WOGGLE_COLORS = ["Red", "Green", "Gold", "Purple", "Pink", "Dark Blue"];
-
-        // Application State
-        let selectedStyle = WOGGLE_STYLES[0];
-        let selectedColor = WOGGLE_COLORS[0];
-        let currentLang = 'kh'; // Set Khmer as default
-        let cart = {
-            standardItems: {},
-            customWoggles: []
-        };
-
-        // Language Switcher Slider Handler
-        function updateLangUI(notify = true) {
-            const slider = document.getElementById('lang-slider-pill');
-            const btnEn = document.getElementById('lang-btn-en');
-            const btnKh = document.getElementById('lang-btn-kh');
-
-            if (currentLang === 'kh') {
-                slider.style.left = '62px';
-                btnEn.className = "relative z-10 w-[56px] py-1 text-[11px] font-black tracking-wider transition-colors duration-300 text-purple-200 flex items-center justify-center gap-1";
-                btnKh.className = "relative z-10 w-[56px] py-1 text-[11px] font-black tracking-wider transition-colors duration-300 text-gray-900 flex items-center justify-center gap-1";
-                if (notify) showToast("ភាសាខ្មែរ (Khmer selected)");
-            } else {
-                slider.style.left = '4px';
-                btnEn.className = "relative z-10 w-[56px] py-1 text-[11px] font-black tracking-wider transition-colors duration-300 text-gray-900 flex items-center justify-center gap-1";
-                btnKh.className = "relative z-10 w-[56px] py-1 text-[11px] font-black tracking-wider transition-colors duration-300 text-purple-200 flex items-center justify-center gap-1";
-                if (notify) showToast("English selected");
-            }
-        }
-
-        function toggleLanguage() {
-            currentLang = currentLang === 'en' ? 'kh' : 'en';
-            updateLangUI(true);
-        }
-
-        // Tab Navigation Switcher
-        function switchTab(tabName) {
-            const tabs = ['home', 'woggle', 'shop', 'pin', 'badge'];
-            
-            tabs.forEach(t => {
-                const view = document.getElementById(`tab-${t}-view`);
-                const btn = document.getElementById(`nav-btn-${t}`);
-                if (view) {
-                    if (t === tabName) {
-                        view.classList.remove('hidden');
-                    } else {
-                        view.classList.add('hidden');
-                    }
-                }
-                if (btn) {
-                    if (t === tabName) {
-                        btn.className = "py-1.5 flex flex-col items-center justify-center text-center transition-all rounded-2xl text-[#7414DC]";
-                    } else {
-                        btn.className = "py-1.5 flex flex-col items-center justify-center text-center transition-all rounded-2xl text-gray-400 hover:text-[#7414DC]";
-                    }
-                }
-            });
-
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function renderShopGrids() {
-            renderGrid('woggle-products-grid', WOGGLE_PRODUCTS);
-            renderGrid('shop-products-grid', SHOP_PRODUCTS);
-            renderGrid('pin-products-grid', PIN_PRODUCTS);
-            renderGrid('badge-products-grid', BADGE_PRODUCTS);
-        }
-
-        // Custom SVG icon definitions
-        const SVG_ICONS = {
-            woggle: `<svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M12.75 2.25c-.41 0-.75.34-.75.75v3.19c-.83-.43-1.84-.52-2.76-.23-1.34.42-2.34 1.54-2.58 2.93-.15.86.08 1.73.61 2.4.52.66 1.3 1.05 2.14 1.08.38.01.76-.06 1.12-.2.4.67 1.03 1.18 1.77 1.43v.8c-1.32.18-2.55.77-3.5 1.68C7.45 17.41 6.5 19.38 6.5 21.5c0 .41.34.75.75.75s.75-.34.75-.75c0-1.74.78-3.32 2.06-4.38.9-.74 2.04-1.17 3.19-1.22 1.15.05 2.29.48 3.19 1.22 1.28 1.06 2.06 2.64 2.06 4.38 0 .41.34.75.75.75s.75-.34.75-.75c0-2.12-.95-4.09-2.8-5.42-.95-.91-2.18-1.5-3.5-1.68v-.8c.74-.25 1.37-.76 1.77-1.43.36.14.74.21 1.12.2.84-.03 1.62-.42 2.14-1.08.53-.67.76-1.54.61-2.4-.24-1.39-1.24-2.51-2.58-2.93-.92-.29-1.93-.2-2.76.23V3c0-.41-.34-.75-.75-.75zM12 7.75c.97 0 1.75.78 1.75 1.75s-.78 1.75-1.75 1.75S10.25 10.47 10.25 9.5 11.03 7.75 12 7.75z"/></svg>`,
-            pin: `<svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M12 2C8.7 2 6 4.7 6 8C6 11.5 9 14.5 11 16.2V21C11 21.6 11.4 22 12 22C12.6 22 13 21.6 13 21V16.2C15 14.5 18 11.5 18 8C18 4.7 15.3 2 12 2ZM12 14.2C10.3 12.7 8 10.3 8 8C8 5.8 9.8 4 12 4C14.2 4 16 5.8 16 8C16 10.3 13.7 12.7 12 14.2ZM12 6C10.9 6 10 6.9 10 8C10 9.1 10.9 10 12 10C13.1 10 14 9.1 14 8C14 6.9 13.1 6 12 6Z"/></svg>`
-        };
-
-        // Render Product Grids - Square 1:1 Image Layout with Bottom Title & Right Plus Button
-        function renderGrid(containerId, products) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = products.map(p => `
-                <div class="bg-white rounded-3xl p-3 border border-purple-100 shadow-sm flex flex-col justify-between overflow-hidden">
-                    <!-- Square 1:1 Aspect Ratio Image Placeholder Container -->
-                    <div class="w-full aspect-square bg-purple-50 rounded-2xl flex items-center justify-center text-[#7414DC] mb-3 relative overflow-hidden group">
-                        ${p.svgIcon ? SVG_ICONS[p.svgIcon] : `<i class="fa-solid ${p.icon} text-3xl"></i>`}
-                        ${p.isCustom ? `<span class="absolute top-2 left-2 px-2 py-0.5 bg-[#F4A81E] text-gray-900 font-black text-[9px] rounded-full uppercase tracking-wider">Custom</span>` : ''}
-                    </div>
-
-                    <!-- Bottom Details Row with Title/Price Left, Plus Icon Right -->
-                    <div class="flex items-end justify-between gap-1">
-                        <div class="min-w-0 flex-1">
-                            <h4 class="font-extrabold text-gray-900 text-xs leading-tight truncate mb-0.5">${p.name}</h4>
-                            <p class="text-xs font-black text-[#7414DC]">$${p.price.toFixed(2)}</p>
-                        </div>
-
-                        ${p.isCustom ? `
-                            <button onclick="openWoggleModal()" class="w-9 h-9 bg-[#F4A81E] text-gray-900 rounded-2xl font-black text-sm flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition-all">
-                                <i class="fa-solid fa-sliders"></i>
-                            </button>
-                        ` : `
-                            <button onclick="changeStandardQty('${p.id}', 1)" class="w-9 h-9 bg-[#7414DC] hover:bg-purple-800 text-white rounded-2xl font-black text-sm flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition-all">
-                                <i class="fa-solid fa-plus"></i>
-                            </button>
-                        `}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Woggle Customizer Modal & Selectors
-        function renderWoggleSelectors() {
-            const styleContainer = document.getElementById('woggle-style-selector');
-            styleContainer.innerHTML = WOGGLE_STYLES.map(s => `
-                <button onclick="selectStyle('${s}')" class="py-2 px-3 text-xs font-bold rounded-xl border transition-all ${selectedStyle === s ? 'bg-[#7414DC] text-white border-[#7414DC]' : 'bg-gray-50 text-gray-700 border-gray-200'}">
-                    ${s}
-                </button>
-            `).join('');
-
-            const colorContainer = document.getElementById('woggle-color-selector');
-            colorContainer.innerHTML = WOGGLE_COLORS.map(c => `
-                <button onclick="selectColor('${c}')" class="py-2 px-2 text-[11px] font-bold rounded-xl border transition-all ${selectedColor === c ? 'bg-gray-900 text-white border-gray-900' : 'bg-gray-50 text-gray-700 border-gray-200'}">
-                    ${c}
-                </button>
-            `).join('');
-        }
-
-        function selectStyle(s) { selectedStyle = s; renderWoggleSelectors(); }
-        function selectColor(c) { selectedColor = c; renderWoggleSelectors(); }
-
-        function openWoggleModal() {
-            document.getElementById('woggle-customizer-modal').classList.remove('hidden');
-        }
-
-        function closeWoggleModal() {
-            document.getElementById('woggle-customizer-modal').classList.add('hidden');
-        }
-
-        function addWoggleToCart() {
-            const nameInput = document.getElementById('woggle-custom-name');
-            const customName = nameInput.value.trim() || "Standard";
-
-            cart.customWoggles.push({
-                style: selectedStyle,
-                color: selectedColor,
-                name: customName,
-                price: 5.00
-            });
-
-            nameInput.value = '';
-            closeWoggleModal();
-            showToast("Custom Scout Woggle added!");
-            updateCartState();
-        }
-
-        // Standard Item Qty Control
-        function changeStandardQty(id, change) {
-            const current = cart.standardItems[id] || 0;
-            const updated = current + change;
-            if (updated <= 0) {
-                delete cart.standardItems[id];
-            } else {
-                cart.standardItems[id] = updated;
-            }
-            renderShopGrids();
-            updateCartState();
-        }
-
-        function removeCustomWoggle(index) {
-            cart.customWoggles.splice(index, 1);
-            updateCartState();
-            showToast("Item removed");
-        }
-
-        function clearCart() {
-            cart = { standardItems: {}, customWoggles: [] };
-            renderShopGrids();
-            updateCartState();
-            showToast("Cart cleared");
-        }
-
-        // Cart State & Receipt Calculation
-        function updateCartState() {
-            const standardTotalCount = Object.values(cart.standardItems).reduce((a, b) => a + b, 0);
-            const totalCount = standardTotalCount + cart.customWoggles.length;
-
-            document.getElementById('header-cart-badge').innerText = totalCount;
-
-            // Render Cart Modal Items
-            const itemsContainer = document.getElementById('cart-items-container');
-            let itemsHTML = '';
-            let totalCost = 0;
-
-            const allProducts = [...WOGGLE_PRODUCTS, ...SHOP_PRODUCTS, ...PIN_PRODUCTS, ...BADGE_PRODUCTS];
-
-            // Standard Products
-            for (let [id, qty] of Object.entries(cart.standardItems)) {
-                const prod = allProducts.find(p => p.id === id);
-                if (prod && qty > 0) {
-                    const subtotal = prod.price * qty;
-                    totalCost += subtotal;
-                    itemsHTML += `
-                        <div class="bg-gray-50 border border-gray-100 p-3 rounded-2xl flex items-center justify-between text-xs">
-                            <div>
-                                <h5 class="font-bold text-gray-900">${prod.name}</h5>
-                                <p class="text-gray-500">${qty}x @ $${prod.price.toFixed(2)} = <strong class="text-[#7414DC]">$${subtotal.toFixed(2)}</strong></p>
-                            </div>
-                            <div class="flex items-center gap-1">
-                                <button onclick="changeStandardQty('${id}', -1)" class="w-7 h-7 bg-white text-gray-700 border rounded-lg font-bold">-</button>
-                                <button onclick="changeStandardQty('${id}', 1)" class="w-7 h-7 bg-[#7414DC] text-white rounded-lg font-bold">+</button>
-                            </div>
-                        </div>
-                    `;
-                }
-            }
-
-            // Custom Woggles Display
-            cart.customWoggles.forEach((w, idx) => {
-                totalCost += w.price;
-                itemsHTML += `
-                    <div class="bg-purple-50/70 border border-purple-100 p-3 rounded-2xl flex items-center justify-between text-xs">
-                        <div>
-                            <h5 class="font-extrabold text-purple-950">Scout Woggle (${w.style}, <span class="text-rose-600">${w.color}</span>)</h5>
-                            <p class="text-[11px] text-gray-600">Name: <strong class="text-gray-900">${w.name}</strong> • $${w.price.toFixed(2)}</p>
-                        </div>
-                        <button onclick="removeCustomWoggle(${idx})" class="w-7 h-7 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors flex items-center justify-center">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
-                `;
-            });
-
-            if (!itemsHTML) {
-                itemsContainer.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-4">No items in your cart yet.</p>`;
-            } else {
-                itemsContainer.innerHTML = itemsHTML;
-            }
-
-            document.getElementById('cart-total-price').innerText = `$${totalCost.toFixed(2)}`;
-
-            // Render Formatted Auto-Sorted Receipt
-            document.getElementById('receipt-formatted-output').innerText = generateFormattedReceipt();
-        }
-
-        // Auto-Sorting Receipt Generator (Color -> Style -> Name)
-        function generateFormattedReceipt() {
-            const hasStandard = Object.keys(cart.standardItems).length > 0;
-            const hasWoggles = cart.customWoggles.length > 0;
-
-            if (!hasStandard && !hasWoggles) {
-                return "Cart is empty.";
-            }
-
-            let total = 0.0;
-            let lines = ["📋 CUSTOMER ORDER SUMMARY (@nimet_giftshop)\n"];
-            const allProducts = [...WOGGLE_PRODUCTS, ...SHOP_PRODUCTS, ...PIN_PRODUCTS, ...BADGE_PRODUCTS];
-
-            // Standard Items
-            for (let [id, qty] of Object.entries(cart.standardItems)) {
-                const prod = allProducts.find(p => p.id === id);
-                if (prod && qty > 0) {
-                    const subtotal = prod.price * qty;
-                    total += subtotal;
-                    lines.push(`• ${prod.name}: ${qty}x @ $${prod.price.toFixed(2)} = $${subtotal.toFixed(2)}`);
-                }
-            }
-
-            // Custom Woggles Auto-Sorted by Color -> Style -> Name
-            if (hasWoggles) {
-                const sortedWoggles = [...cart.customWoggles].sort((a, b) => {
-                    if (a.color !== b.color) return a.color.localeCompare(b.color);
-                    if (a.style !== b.style) return a.style.localeCompare(b.style);
-                    return a.name.localeCompare(b.name);
-                });
-
-                sortedWoggles.forEach(w => {
-                    total += w.price;
-                    lines.push(`• Scout Woggle (${w.style}, ${w.color}) [Name: ${w.name}] = $${w.price.toFixed(2)}`);
-                });
-            }
-
-            lines.push(`\n💵 Total Due: $${total.toFixed(2)}`);
-            lines.push("Thank you for ordering with Nimet Scout Shop!");
-            return lines.join("\n");
-        }
-
-        // Modal Controls
-        function toggleCartModal(show) {
-            const modal = document.getElementById('cart-modal');
-            if (show) modal.classList.remove('hidden');
-            else modal.classList.add('hidden');
-        }
-
-        // One-Tap Clipboard Copy
-        function copyReceiptToClipboard() {
-            const receiptText = generateFormattedReceipt();
-            if (receiptText === "Cart is empty.") {
-                showToast("Cart is empty!");
-                return;
-            }
-
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(receiptText).then(() => {
-                    showToast("Receipt copied!");
-                    animateCopyLabel();
-                }).catch(() => fallbackCopy(receiptText));
-            } else {
-                fallbackCopy(receiptText);
-            }
-        }
-
-        function fallbackCopy(text) {
-            const textarea = document.createElement("textarea");
-            textarea.value = text;
-            textarea.style.position = "fixed";
-            document.body.appendChild(textarea);
-            textarea.focus();
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                showToast("Receipt copied!");
-                animateCopyLabel();
-            } catch (err) {
-                showToast("Copy failed");
-            }
-            document.body.removeChild(textarea);
-        }
-
-        function animateCopyLabel() {
-            const label = document.getElementById('copy-btn-label');
-            label.innerText = "Copied to Clipboard! ✨";
-            setTimeout(() => {
-                label.innerText = "1-Tap Copy Receipt";
-            }, 2000);
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-text').innerText = msg;
-            toast.classList.remove('opacity-0', 'pointer-events-none');
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'pointer-events-none');
-            }, 2000);
-        }
-
-        // Initialize App on Load
-        window.addEventListener('DOMContentLoaded', () => {
-            renderShopGrids();
-            renderWoggleSelectors();
-            updateCartState();
-            updateLangUI(false); // Initialize Khmer default pill position without initial toast
-        });
-    </script>
+    <!-- Main JavaScript App Entry -->
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>

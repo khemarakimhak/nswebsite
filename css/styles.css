@@ -1,0 +1,63 @@
+/* css/styles.css - Nimet Scout Shop Custom Styles & Design Tokens */
+
+:root {
+--brand-purple: #7414DC;
+--brand-gold: #F4A81E;
+--brand-green: #80BE43;
+--brand-bg: #ffe7e5;
+}
+
+html, body {
+background-color: var(--brand-bg) !important;
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+-webkit-tap-highlight-color: transparent;
+touch-action: manipulation;
+}
+
+/* Minimum recommended touch target size */
+button, input, select {
+min-height: 48px;
+}
+
+.bg-brand-purple { background-color: #7414DC; }
+.text-brand-purple { color: #7414DC; }
+.border-brand-purple { border-color: #7414DC; }
+
+.bg-brand-gold { background-color: #F4A81E; }
+.text-brand-gold { color: #F4A81E; }
+
+.bg-brand-green { background-color: #80BE43; }
+.text-brand-green { color: #80BE43; }
+
+/* Custom SVG Icon Helper Styles - Standardized size & flex alignment */
+.nav-icon-svg {
+width: 1.125rem;
+height: 1.125rem;
+fill: currentColor;
+display: block;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+width: 4px;
+}
+::-webkit-scrollbar-thumb {
+background: rgba(116, 20, 220, 0.2);
+border-radius: 4px;
+}
+
+/* Smooth Slide Animations */
+@keyframes slideUp {
+from {
+transform: translateY(100%);
+opacity: 0;
+}
+to {
+transform: translateY(0);
+opacity: 1;
+}
+}
+
+.animate-slide-up {
+animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
