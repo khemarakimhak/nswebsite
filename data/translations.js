@@ -60,8 +60,11 @@ export const TRANSLATIONS = {
     woggle_normal_title: { en: "Normal {style} Woggle",                 kh: "កង {style} ធម្មតា" },
 
     // ----- Woggle menu (the pop-up) -----
-    modal_selected_color:{ en: "Selected color",                        kh: "ពណ៌ដែលបានជ្រើស" },
-    modal_color_label:   { en: "1. Color",                              kh: "1. ពណ៌" },
+    // Heading of the option list + "selected" line. A product picks one with  optionsTitle: "color" | "class"
+    optiontitle_color:      { en: "1. Color",                           kh: "1. ពណ៌" },
+    optionselected_color:   { en: "Selected color",                     kh: "ពណ៌ដែលបានជ្រើស" },
+    optiontitle_class:      { en: "1. Class",                           kh: "1. ថ្នាក់" },
+    optionselected_class:   { en: "Selected class",                     kh: "ថ្នាក់ដែលបានជ្រើស" },
     modal_name_label:    { en: "2. Name",                               kh: "2. ឈ្មោះ" },
     modal_name_placeholder: { en: "Enter name",                         kh: "សូមសរសេរឈ្មោះលើកង" },
     modal_add_to_cart:   { en: "Add to Cart",                           kh: "ដាក់ចូលកន្ត្រកទំនិញ" },
@@ -74,7 +77,23 @@ export const TRANSLATIONS = {
     woggle_cart_label:        { en: "{style} Woggle ({color})",         kh: "កងឈ្មោះ {style} ({color})" },
     woggle_normal_cart_label: { en: "Normal {style} Woggle ({color})",  kh: "កង {style} ធម្មតា ({color})" },
     cart_copy_receipt:   { en: "Copy Receipt",                          kh: "ចម្លងវិក្កយបត្រ" },
+    cart_export_pdf:     { en: "Export PDF",                            kh: "ទាញយកជា PDF" },
     cart_clear:          { en: "Clear Cart",                            kh: "សម្អាតកន្ត្រក" },
+
+    // ----- Cart: receiver details -----
+    cart_receiver_title:   { en: "Receiver Details",                    kh: "ព័ត៌មានអ្នកទទួល" },
+    cart_receiver_name:    { en: "Receiver Name",                       kh: "ឈ្មោះអ្នកទទួល" },
+    cart_receiver_phone:   { en: "Receiver Phone Number",               kh: "លេខទូរស័ព្ទអ្នកទទួល" },
+    cart_receiver_address: { en: "Receiver Address",                    kh: "អាសយដ្ឋានអ្នកទទួល" },
+    cart_delivery_title:   { en: "Delivery Method",                     kh: "វិធីសាស្ត្រដឹកជញ្ជូន" },
+    delivery_vet:          { en: "VET",                                 kh: "VET" },
+    delivery_jt:           { en: "J&T",                                 kh: "J&T" },
+    delivery_delivery:     { en: "Delivery",                            kh: "ដឹកជូន" },
+    delivery_pickup:       { en: "Pick up",                             kh: "មកយកផ្ទាល់" },
+    delivery_free:         { en: "Free",                                kh: "ឥតគិតថ្លៃ" },
+    delivery_choose_fee:   { en: "Please choose a delivery fee",        kh: "សូមជ្រើសរើសតម្លៃដឹកជូន" },
+    // Line added to the cart, receipt and PDF when the delivery costs money: "Delivery fee (VET)"
+    delivery_fee_label:    { en: "Delivery fee",                        kh: "ថ្លៃដឹកជញ្ជូន" },
 
     // ----- Small pop-up messages -----
     toast_added:         { en: "Item added to cart!",                   kh: "ទំនិញបានដាក់ចូលកន្ត្រកទំនិញ!" },
@@ -83,6 +102,8 @@ export const TRANSLATIONS = {
     toast_copied:        { en: "Receipt copied!",                       kh: "បានចម្លងវិក្កយបត្រ!" },
     toast_copy_failed:   { en: "Copy failed",                           kh: "ចម្លងមិនបាន" },
     toast_cleared:       { en: "Cart cleared",                          kh: "បានសម្អាតកន្ត្រក" },
+    toast_pdf_done:      { en: "PDF saved!",                            kh: "បានរក្សាទុក PDF!" },
+    toast_pdf_failed:    { en: "Could not create PDF",                  kh: "បង្កើត PDF មិនបាន" },
 
     // ----- Receipt (the text customers copy and send you) -----
     // Tip: if you always want the receipt in English, make the kh: the same as en:
@@ -91,6 +112,21 @@ export const TRANSLATIONS = {
     receipt_name:        { en: "[Name: {name}]",                        kh: "[ឈ្មោះ: {name}]" },
     receipt_total:       { en: "💵 Total Due: {total}",                 kh: "💵 សរុបត្រូវបង់: {total}" },
     receipt_thanks:      { en: "Thank you for ordering with Nimet Scout Shop!", kh: "អរគុណដែលបានបញ្ជាទិញជាមួយហាងនិម្មិត" },
+    // Receiver lines at the top of the copied receipt
+    receipt_receiver:    { en: "Receiver",                              kh: "អ្នកទទួល" },
+    receipt_phone:       { en: "Phone",                                 kh: "ទូរស័ព្ទ" },
+    receipt_address:     { en: "Address",                               kh: "អាសយដ្ឋាន" },
+    receipt_delivery:    { en: "Delivery",                              kh: "ដឹកជញ្ជូន" },
+
+    // ----- PDF receipt (thermal printer). The PDF is ALWAYS printed in Khmer,
+    //       so only the kh: text below is used. Top line "Nimet Scout Shop" comes from app_name (en),
+    //       the Khmer shop name line comes from app_name (kh).
+    pdf_sender_phone:    { en: "Sender phone",                          kh: "លេខអ្នកផ្ញើ" },
+    pdf_receiver_phone:  { en: "Receiver phone",                        kh: "លេខអ្នកទទួល" },
+    pdf_address:         { en: "Address",                               kh: "អាសយដ្ឋាន" },
+    pdf_delivery:        { en: "Delivery",                              kh: "ដឹកជញ្ជូន" },
+    pdf_total:           { en: "Total",                                 kh: "សរុប" },
+    pdf_footer:          { en: "Thank you for supporting our little shop. Please visit again.", kh: "សូមអរគុណដែលបានគាំទ្រហាងតូចរបស់យើងខ្ញុំ សូមអញ្ជើញមកម្តងទៀត" },
 };
 
 
@@ -110,4 +146,21 @@ export const COLOR_TRANSLATIONS = {
     "Wood Brown":       "ត្នោតឈើ",
     "Wood White":       "សឈើ",
     "Normal Red Cross": "កាកបាទក្រហមធម្មតា",
+    "White":            "ស",
+};
+
+
+// ---------------------------------------------------------------------
+//  OPTION NAMES in Khmer (for products with a choice menu that are not colors,
+//  e.g. the classes of the Rank Badge). English name must match catalog.js.
+//  Two-color options such as "White-Red" are built automatically from the
+//  color names above, so you do not need to add them here.
+// ---------------------------------------------------------------------
+export const OPTION_TRANSLATIONS = {
+    "Beginner Class":   "ថ្នាក់ដំបូង",
+    "2nd Class":        "ថ្នាក់ទី ២",
+    "3rd Class":        "ថ្នាក់ទី ៣",
+    "Star Class":       "ថ្នាក់ផ្កាយ",
+    "Courageous Class": "ថ្នាក់វីរៈកាយរឹទ្ធិ",
+    "Angkor Class":     "ថ្នាក់អង្គរ",
 };

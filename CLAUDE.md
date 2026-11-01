@@ -1,0 +1,131 @@
+# Nimet Scout Shop (nswebsite)
+
+Mobile-first shop website for a Scout gear shop in Cambodia. Customers browse products, build a
+cart, fill in receiver details, then copy the receipt text or export a PDF for a 55 mm thermal
+printer. There is no checkout or server: the owner receives the copied receipt (Telegram
+@nimet_giftshop) and prints the PDF.
+
+The owner is not a developer. Anything the owner edits regularly must stay simple (plain lists in
+`data/`), and explanations should be in plain language.
+
+## Tech stack
+
+- Plain static site: `index.html` + ES modules (`<script type="module">`). No build step, no npm.
+- Tailwind CSS via CDN (`cdn.tailwindcss.com`) and Font Awesome 6 via CDN.
+- Hosted on GitHub Pages, branch `master`. Paths are case-sensitive: keep file and folder names lowercase.
+- Must be served over HTTP (GitHub Pages or a local server such as VS Code Live Server). Opening
+  `index.html` by double-click breaks the ES-module imports. `index.html` shows a red banner if a
+  module file is missing.
+- State is kept in `localStorage`: cart (`nimet_scout_cart`) and receiver details (`nimet_scout_receiver`).
+
+## Folder structure
+
+```
+index.html              page shell: header, 5 tabs, bottom nav, woggle menu modal, cart modal, toast
+css/
+  styles.css            brand colors, K5 Khmer font (@font-face), small helpers
+  k5.woff2              Khmer font (loaded only for Khmer letters via unicode-range)
+data/                   <- files the OWNER edits (no code knowledge needed)
+  catalog.js            all products, prices, Khmer names, colors, woggle styles, exchange rate, sender phone
+  news.js               home-page newsfeed posts
+  translations.js       all website wording, English + Khmer, side by side
+js/                     <- code; the owner normally does not edit these
+  app.js                UI controller: rendering, events, search, choice menu, cart UI, language toggle
+  cart.js               cart + receiver state, localStorage, receipt text
+  products.js           builds product lists from data/catalog.js
+  i18n.js               language state, t(), name/option translation helpers
+  currency.js           formatPrice(): USD in English, riel in Khmer
+  pdf.js                55 mm thermal receipt PDF (canvas -> PDF, no library)
+assets/                 pictures, one folder per section (see below)
+  shop/ pin/ badge/ woggle/ news/
+```
+
+## How the app works
+
+- **Tabs:** Home (newsfeed), Shop, Woggle, Pin, Badge. Every product tab has a live search box
+  (matches English name, Khmer name and the name shown right now).
+- **Products** come from `data/catalog.js` through `js/products.js`. IDs are generated: `<section>-<slug of name>`
+  (`shop-coffee-mug`). Woggle style cards are `wn-<style>` (woggle with a name) and `wp-<style>` (normal woggle).
+  Renaming an item changes its ID, so carts saved on customers' phones will drop it. This is harmless.
+- **Choice menu:** a product with `options: [...]` gets a "+" button that opens the modal: square picture on top,
+  option buttons, optional name field, quantity stepper, price on the Add to Cart button.
+  - Name field is shown only for `kind: 'custom'` (the "Woggle Name" cards). Everything else is `kind: 'normal'`.
+  - Two-color options are written `"White-Red"`; the app splits on `-` and draws a two-tone swatch.
+  - Non-color options (e.g. Rank Badge classes) have no swatch. `optionsTitle: "class"` changes the menu wording.
+- **Cart:** plain items live in `cart.standardItems` (id -> qty). Choice-menu items live in `cart.customWoggles`
+  (the name is historical; it holds every choice-menu item). Its field `color` holds the chosen option. Identical
+  items merge into one line with a quantity. Items removed from the catalog are ignored.
+- **Receiver details:** name, phone, address and delivery method (VET / J&T / Delivery / Pick up) in the cart. Saved on the
+  phone, included in the copied receipt and the PDF. "Clear Cart" empties items only.
+- **Delivery fees** (`DELIVERY` in `data/catalog.js`, in USD): VET $1.50, J&T $1.625 (= 6,500៛), Delivery = customer picks
+  $1.00 / $1.50 / $2.00 (none preselected; a hint shows until one is chosen), Pick up is free. The fee is added to the total
+  and shown as its own row ("Delivery fee (VET)") in the cart, the copied receipt and the PDF. No fee row for Pick up, and no
+  fee is counted while the cart is empty. Tapping a chosen method (or fee) again clears it. Prices like 1.625 are shown
+  as `$1.625` in English (`formatPrice` keeps a 3rd decimal only when needed).
+- **Receipt text:** `generateFormattedReceipt()` follows the current language and currency.
+- **PDF:** always Khmer and riel, whatever the site language. Width 55 mm, length grows with the items.
+  The Export PDF button is intentionally small and faint (owner tool, so customers do not tap it by accident);
+  Copy Receipt is the main button. Do not make the PDF button prominent again.
+  Text is drawn on a canvas (so the browser shapes Khmer correctly) and wrapped in a one-page PDF.
+
+## Rules and decisions (keep these)
+
+- **Prices are stored in US dollars.** Khmer mode shows riel: `price * SETTINGS.USD_TO_KHR` (currently 4000),
+  formatted like `12,000៛`. English mode shows `$12.00`. Never store riel prices.
+- **Default language is Khmer** (`kh`). The EN/KH slider toggles it and re-renders grids, news, cart, open menu and static text.
+- **Standard woggle prices:** woggle with name `WOGGLE_NAME_PRICE` = $3.00; normal woggles `WOGGLE_NORMAL_PRICE` = $1.25.
+- **The cart stores English names** (style, option, title) and translates when displaying. Do not store translated text.
+- **All wording lives in `data/translations.js`.** Use `t('key')`; do not hard-code English or Khmer strings in JS/HTML.
+  In HTML use `data-i18n="key"` and `data-i18n-placeholder="key"`. If `kh:` is empty, English is shown.
+  Keep `{style}`, `{color}`, `{name}`, `{qty}`, `{total}` placeholders intact.
+- **Product names:** English in `name`, Khmer in `nameKh` (in `data/catalog.js`). Color names in `COLOR_TRANSLATIONS`,
+  non-color option names in `OPTION_TRANSLATIONS`, woggle style Khmer names as `nameKh` on each style.
+- **Khmer font:** K5 (`css/k5.woff2`) is restricted to Khmer code points with `unicode-range`; English keeps the system font.
+  K5 has one weight, so `font-weight: 100 900` is declared to avoid fake bold.
+- **PDF receipt layout (do not reorder):** `Nimet Scout Shop` (English) -> Khmer shop name -> receiver name -> line ->
+  sender phone (`SETTINGS.SENDER_PHONE`, 070 90 98 96) -> receiver phone -> address -> delivery method -> line ->
+  items -> delivery fee row (only if > 0) -> total -> Khmer footer.
+- Touch targets are at least 48 px and text inputs use 16 px (prevents iOS zoom). Keep it mobile-first (max width `max-w-lg`).
+- User-typed text (names, address) must go through `escapeHTML` before being put into `innerHTML`.
+
+## Pictures
+
+Put square pictures (about 800 x 800) in the section's own folder and type only the file name in `data/catalog.js`.
+
+| Section | Folder | Main picture example |
+|---|---|---|
+| Shop | `assets/shop/` | `mug.jpg` |
+| Pin | `assets/pin/` | `pin-national.jpg` |
+| Badge | `assets/badge/` | `rank-badge.jpg` |
+| Woggle | `assets/woggle/` | `woggle-scout.jpg`, `normal-woggle-scout.jpg`, `round-lis-woggle.jpg` |
+| News | `assets/news/` | any name used in `data/news.js` (shown as a 16:9 banner) |
+
+Picture for one choice (each color, class...) sits in the same folder: `<imageKey>-<option>.jpg`, all lowercase, spaces become `-`.
+- Woggle with a name: `scout-dark-blue.jpg`, `red-cross-wood-white.jpg`
+- Normal woggle: `normal-scout-dark-blue.jpg`
+- Other items (`imageKey` = slug of the item name): `round-lis-woggle-red.jpg`, `square-lis-woggle-white-red.jpg`, `rank-badge-star-class.jpg`
+
+If a choice picture is missing the main picture is used; if that is missing too, an icon is shown. Nothing breaks.
+
+## Common tasks
+
+- **Add a product:** add one line to the right list in `data/catalog.js` (`name`, `nameKh`, `price`, `image`, optional `options`).
+- **Post an update:** add a block at the top of `data/news.js` (`date` as `YYYY-MM-DD`, newest shows first).
+- **Change wording:** edit the line in `data/translations.js`. Add the Khmer text in `kh:`.
+- **Change exchange rate or sender phone:** `SETTINGS` at the top of `data/catalog.js`.
+- **Add a woggle style:** add to `WOGGLE_STYLES` in `data/catalog.js` (also its Khmer `nameKh` and a color list).
+- **Add a color:** add it to `COLORS` (hex) in `data/catalog.js` and to `COLOR_TRANSLATIONS` in `data/translations.js`.
+
+## Testing
+
+No test suite. Check changes in a browser over HTTP, in both English and Khmer, on a phone-width screen.
+After editing, run `node --check` on JS files (copy to `.mjs` if needed) for syntax errors. For the PDF, export one
+and confirm the page is 55 mm wide and the Khmer text looks right. Hard-refresh to avoid cached JS and CSS.
+
+## Open items
+
+- Placeholder prices to confirm in `data/catalog.js`: the five scarves ($5.00) and the Rank Badge ($2.00) are marked `TODO`.
+  Round Lis and Square Lis woggles use the normal-woggle price.
+- Khmer wording in `data/translations.js` and `data/catalog.js` is partly draft; the owner reviews and corrects it.
+- Possible Khmer typo to confirm: "កន្សេងលឿង" (Yellow Scarf), maybe "កន្សែងលឿង".
+- The repo had no `assets/` folder when last checked; pictures must be uploaded for product images to show.

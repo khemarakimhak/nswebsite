@@ -22,6 +22,11 @@ export function colorSlug(color) {
     return slugify(color);
 }
 
+// Picture of one choice, e.g. assets/badge/rank-badge-star-class.jpg
+export function optionImagePath(product, option) {
+    return `assets/${product.section}/${product.imageKey}-${slugify(option)}.jpg`;
+}
+
 // Each section has its own picture folder:
 //   shop -> assets/shop/   woggle -> assets/woggle/   pin -> assets/pin/
 //   badge -> assets/badge/  news -> assets/news/
@@ -37,13 +42,21 @@ function makeItems(section, items, fallback) {
         let id = `${section}-${slugify(it.name) || 'item'}`;
         if (used.has(id)) id = `${id}-${index}`;
         used.add(id);
+        const hasOptions = Array.isArray(it.options) && it.options.length > 0;
         return {
             id,
+            section,
             name: it.name,
             nameKh: it.nameKh || '',
             price: Number(it.price) || 0,
             image: imgPath(it.image, section),
             isCustom: false,
+            ...(hasOptions ? {
+                options: it.options,                        // choice menu (colors, classes...)
+                optionsTitle: it.optionsTitle || 'color',
+                kind: 'normal',                             // no name field
+                imageKey: slugify(it.name)                  // option picture: <imageKey>-<option>.jpg
+            } : {}),
             ...fallback
         };
     });
@@ -60,7 +73,11 @@ export const WOGGLE_STYLES = STYLE_DATA.map(s => ({
 
 const woggleNameCards = WOGGLE_STYLES.map(s => ({
     id: `wn-${s.id}`,
+    section: 'woggle',
     styleId: s.id,
+    options: s.colors,
+    optionsTitle: 'color',
+    imageKey: s.id,
     kind: 'custom',
     styleName: s.name,
     titleKey: 'woggle_name_title',
@@ -73,7 +90,11 @@ const woggleNameCards = WOGGLE_STYLES.map(s => ({
 
 const woggleNormalCards = WOGGLE_STYLES.map(s => ({
     id: `wp-${s.id}`,
+    section: 'woggle',
     styleId: s.id,
+    options: s.colors,
+    optionsTitle: 'color',
+    imageKey: `normal-${s.id}`,
     kind: 'normal',
     styleName: s.name,
     titleKey: 'woggle_normal_title',

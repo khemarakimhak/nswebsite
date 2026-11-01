@@ -5,27 +5,37 @@ import {
     SHOP_PRODUCTS,
     PIN_PRODUCTS,
     BADGE_PRODUCTS,
-    WOGGLE_STYLES,
     COLOR_HEX,
-    colorSlug,
+    optionImagePath,
     imgPath
 } from './products.js';
 
 import {
     loadCartFromStorage,
     getCart,
-    addCustomWoggle,
+    addVariantItem,
     changeWoggleQty,
     changeStandardQty,
     clearCartState,
     generateFormattedReceipt,
     getValidStandardEntries,
     woggleLabel,
-    isCartEmpty
+    isCartEmpty,
+    getReceiver,
+    setReceiverField,
+    setDeliveryMethod,
+    setDeliveryFee,
+    getDeliveryFee,
+    getDeliveryRow,
+    getCartTotal,
+    needsDeliveryFeeChoice
 } from './cart.js';
 
+import { createReceiptPdf } from './pdf.js';
+
 import { formatPrice } from './currency.js';
-import { t, setLang, productName, colorLabel, applyStaticTranslations } from './i18n.js';
+import { DELIVERY } from '../data/catalog.js';
+import { t, setLang, productName, optionLabel, optionTitleKey, applyStaticTranslations } from './i18n.js';
 import { NEWS } from '../data/news.js';
 
 // SVG Definitions for icons
@@ -35,9 +45,8 @@ const SVG_ICONS = {
 };
 
 // Woggle customizer state
-let activeProduct = null;   // the woggle card that opened the menu
-let activeStyle = null;
-let selectedColor = '';
+let activeProduct = null;   // the product whose choice menu is open
+let selectedColor = '';     // the chosen option (a color, "White-Red", "Star Class"...)
 let modalQty = 1;           // how many to add from the customizer menu
 const MAX_QTY = 99;
 let currentLang = 'kh';     // Default to Khmer (prices shown in riel)
@@ -68,7 +77,7 @@ function renderGrid(containerId, allProducts, query = '') {
     container.innerHTML = products.map(p => {
         const fallbackElement = p.svgIcon ? SVG_ICONS[p.svgIcon] : `<i class="fa-solid ${p.icon} text-3xl"></i>`;
         const name = escapeHTML(productName(p));
-        const opensModal = !!p.styleId;
+        const opensModal = Array.isArray(p.options) && p.options.length > 0;
 
         return `
         <div class="bg-white rounded-3xl p-3 border border-purple-100 shadow-sm flex flex-col justify-between overflow-hidden">
@@ -204,6 +213,7 @@ function refreshPrices() {
     renderAllGrids();
     renderNews();
     updateCartStateUI();
+    renderDelivery();
     updateModalPrice();
     refreshModalText();
 }
@@ -228,22 +238,39 @@ function updateLangUI(animated = true) {
     }
 }
 
-// ---------- Woggle customizer ----------
+// ---------- Choice menu (woggles, Round/Square Lis, Rank Badge...) ----------
 
-// Square preview: per-color image -> style image -> tinted icon
+const ALL_PRODUCTS = [...WOGGLE_PRODUCTS, ...SHOP_PRODUCTS, ...PIN_PRODUCTS, ...BADGE_PRODUCTS];
+
+// Swatch colors for an option: "Red" -> ["#DC2626"], "White-Red" -> two colors, "Star Class" -> none
+function optionSwatches(option) {
+    const parts = COLOR_HEX[option] ? [option] : option.split('-');
+    return parts.every(c => COLOR_HEX[c]) ? parts.map(c => COLOR_HEX[c]) : [];
+}
+
+function swatchStyle(option) {
+    const colors = optionSwatches(option);
+    if (colors.length === 0) return '';
+    if (colors.length === 1) return `background:${colors[0]}`;
+    return `background:linear-gradient(90deg, ${colors[0]} 50%, ${colors[1]} 50%)`;
+}
+
+// Square picture: picture of the chosen option -> main picture -> tinted icon
 function updateWoggleImage() {
     const img = document.getElementById('woggle-modal-image');
     const fallback = document.getElementById('woggle-modal-fallback');
-    if (!img || !fallback || !activeStyle || !activeProduct) return;
+    if (!img || !fallback || !activeProduct) return;
 
-    const prefix = activeProduct.kind === 'normal' ? 'normal-' : '';
-    const colorSrc = `assets/woggle/${prefix}${activeStyle.id}-${colorSlug(selectedColor)}.jpg`;
-    const sources = [colorSrc, activeProduct.image].filter(Boolean);
+    const sources = [optionImagePath(activeProduct, selectedColor), activeProduct.image].filter(Boolean);
     let attempt = 0;
 
+    const swatches = optionSwatches(selectedColor);
+    const tint = swatches.find(c => c.toUpperCase() !== '#FFFFFF') || swatches[0] || '#7414DC';
+    const iconKey = activeProduct.svgIcon || 'woggle';
+
     fallback.style.display = 'none';
-    fallback.style.color = COLOR_HEX[selectedColor] || '#7414DC';
-    fallback.innerHTML = SVG_ICONS.woggle.replace('w-8 h-8', 'w-24 h-24');
+    fallback.style.color = tint;
+    fallback.innerHTML = (SVG_ICONS[iconKey] || SVG_ICONS.woggle).replace('w-8 h-8', 'w-24 h-24');
 
     img.style.display = 'block';
     img.onerror = () => {
@@ -259,23 +286,24 @@ function updateWoggleImage() {
 }
 
 function renderWoggleColors() {
-    if (!activeStyle) return;
+    if (!activeProduct) return;
 
-    const colorContainer = document.getElementById('woggle-color-selector');
-    if (colorContainer) {
-        colorContainer.innerHTML = activeStyle.colors.map(c => {
+    const container = document.getElementById('woggle-color-selector');
+    if (container) {
+        container.innerHTML = activeProduct.options.map(c => {
             const active = selectedColor === c;
+            const swatch = swatchStyle(c);
             return `
             <button data-action="select-color" data-value="${escapeHTML(c)}"
                 class="py-2 px-2 text-[11px] font-bold rounded-xl border transition-all flex items-center justify-center gap-1.5 ${active ? 'bg-gray-900 text-white border-gray-900' : 'bg-gray-50 text-gray-700 border-gray-200'}">
-                <span class="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0" style="background:${COLOR_HEX[c] || '#ccc'}"></span>
-                <span class="leading-tight">${escapeHTML(colorLabel(c))}</span>
+                ${swatch ? `<span class="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0" style="${swatch}"></span>` : ''}
+                <span class="leading-tight">${escapeHTML(optionLabel(c))}</span>
             </button>`;
         }).join('');
     }
 
     const colorNameEl = document.getElementById('woggle-modal-color-name');
-    if (colorNameEl) colorNameEl.innerText = colorLabel(selectedColor);
+    if (colorNameEl) colorNameEl.innerText = optionLabel(selectedColor);
 }
 
 function updateModalPrice() {
@@ -285,28 +313,43 @@ function updateModalPrice() {
     if (qtyEl) qtyEl.innerText = modalQty;
 }
 
-// Re-draw the open woggle menu after a language switch
+// Menu headings ("1. Color" / "1. Class") follow the product
+function updateModalHeadings() {
+    if (!activeProduct) return;
+    const titleEl = document.getElementById('woggle-modal-title');
+    if (titleEl) titleEl.innerText = productName(activeProduct);
+    const optTitle = document.getElementById('woggle-options-label');
+    if (optTitle) {
+        const key = optionTitleKey(activeProduct, 'optiontitle');
+        optTitle.setAttribute('data-i18n', key);
+        optTitle.textContent = t(key);
+    }
+    const selLabel = document.getElementById('woggle-selected-label');
+    if (selLabel) {
+        const key = optionTitleKey(activeProduct, 'optionselected');
+        selLabel.setAttribute('data-i18n', key);
+        selLabel.textContent = t(key);
+    }
+}
+
+// Re-draw the open menu after a language switch
 function refreshModalText() {
     if (!activeProduct) return;
-    const title = document.getElementById('woggle-modal-title');
-    if (title) title.innerText = productName(activeProduct);
+    updateModalHeadings();
     renderWoggleColors();
 }
 
 function openWoggleModal(productId) {
-    const product = WOGGLE_PRODUCTS.find(p => p.id === productId);
-    const style = product && WOGGLE_STYLES.find(s => s.id === product.styleId);
-    if (!product || !style) return;
+    const product = ALL_PRODUCTS.find(p => p.id === productId);
+    if (!product || !Array.isArray(product.options) || product.options.length === 0) return;
 
     activeProduct = product;
-    activeStyle = style;
-    selectedColor = style.colors[0];
+    selectedColor = product.options[0];
     modalQty = 1;
 
-    const title = document.getElementById('woggle-modal-title');
-    if (title) title.innerText = productName(product);
+    updateModalHeadings();
 
-    // Normal woggles: color only, so hide the name field
+    // Only woggles with a name show the name field
     const nameWrapper = document.getElementById('woggle-name-wrapper');
     if (nameWrapper) nameWrapper.classList.toggle('hidden', product.kind === 'normal');
 
@@ -320,6 +363,74 @@ function openWoggleModal(productId) {
         const sheet = document.getElementById('woggle-modal-sheet');
         if (sheet) sheet.scrollTop = 0;
     }
+}
+
+// ---------- Receiver details (cart) ----------
+function fillReceiverForm() {
+    const r = getReceiver();
+    document.querySelectorAll('[data-receiver]').forEach(el => {
+        el.value = r[el.getAttribute('data-receiver')] || '';
+    });
+    renderDelivery();
+}
+
+const BTN_ON = 'bg-gray-900 text-white border-gray-900';
+const BTN_OFF = 'bg-gray-50 text-gray-700 border-gray-200';
+
+// Price shown under each delivery button, in the current currency
+function deliveryFeeText(code) {
+    const config = DELIVERY[code];
+    if (!config) return '';
+    if (Array.isArray(config.fees)) {
+        const lowest = Math.min(...config.fees), highest = Math.max(...config.fees);
+        return lowest === highest ? formatPrice(lowest) : `${formatPrice(lowest)} - ${formatPrice(highest)}`;
+    }
+    return config.fee > 0 ? `+${formatPrice(config.fee)}` : t('delivery_free');
+}
+
+function renderDelivery() {
+    const receiver = getReceiver();
+
+    // 1. The four methods
+    document.querySelectorAll('[data-action="select-delivery"]').forEach(btn => {
+        const code = btn.getAttribute('data-value');
+        const active = code === receiver.delivery;
+        btn.className = `py-2 px-2 text-xs font-bold rounded-xl border transition-all ${active ? BTN_ON : BTN_OFF}`;
+        const feeEl = btn.querySelector('[data-delivery-fee]');
+        if (feeEl) feeEl.textContent = deliveryFeeText(code);
+    });
+
+    // 2. Methods with several prices (Delivery) show their price choices
+    const config = DELIVERY[receiver.delivery];
+    const subBox = document.getElementById('delivery-sub');
+    if (subBox) {
+        const hasChoices = !!(config && Array.isArray(config.fees));
+        subBox.classList.toggle('hidden', !hasChoices);
+        subBox.innerHTML = hasChoices ? config.fees.map(fee => {
+            const active = Number(receiver.deliverySub) === fee;
+            return `<button type="button" data-action="select-delivery-fee" data-value="${fee}" class="py-2 px-2 text-xs font-bold rounded-xl border transition-all ${active ? BTN_ON : BTN_OFF}">${formatPrice(fee)}</button>`;
+        }).join('') : '';
+    }
+
+    // 3. Reminder while the price has not been chosen
+    const hint = document.getElementById('delivery-fee-hint');
+    if (hint) hint.classList.toggle('hidden', !needsDeliveryFeeChoice());
+}
+
+function refreshReceiptText() {
+    const receiptEl = document.getElementById('receipt-formatted-output');
+    if (receiptEl) receiptEl.innerText = generateFormattedReceipt();
+}
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
 // ---------- Cart ----------
@@ -374,12 +485,21 @@ export function updateCartStateUI() {
         `;
     });
 
+    const feeRow = getDeliveryRow();
+    if (feeRow) {
+        itemsHTML += `
+            <div class="bg-amber-50 border border-amber-100 p-3 rounded-2xl flex items-center justify-between text-xs">
+                <span class="font-bold text-gray-900">${escapeHTML(feeRow.label)}</span>
+                <strong class="text-[#7414DC]">${formatPrice(feeRow.amount)}</strong>
+            </div>`;
+    }
+
     if (itemsContainer) {
         itemsContainer.innerHTML = itemsHTML || `<p class="text-xs text-gray-400 italic text-center py-4">${escapeHTML(t('cart_empty_items'))}</p>`;
     }
 
     const totalPriceEl = document.getElementById('cart-total-price');
-    if (totalPriceEl) totalPriceEl.innerText = formatPrice(totalCost);
+    if (totalPriceEl) totalPriceEl.innerText = formatPrice(getCartTotal());
 
     const receiptEl = document.getElementById('receipt-formatted-output');
     if (receiptEl) receiptEl.innerText = generateFormattedReceipt();
@@ -403,6 +523,7 @@ window.addEventListener('DOMContentLoaded', () => {
     setLang(currentLang);
     applyStaticTranslations();
     loadCartFromStorage();
+    fillReceiverForm();
     renderAllGrids();
     renderNews();
     updateCartStateUI();
@@ -438,6 +559,14 @@ window.addEventListener('DOMContentLoaded', () => {
             if (input) { input.value = ''; input.focus(); }
             renderSection(section);
             updateClearButton(section);
+        } else if (action === 'select-delivery') {
+            setDeliveryMethod(target.getAttribute('data-value'));
+            renderDelivery();
+            updateCartStateUI();
+        } else if (action === 'select-delivery-fee') {
+            setDeliveryFee(parseFloat(target.getAttribute('data-value')));
+            renderDelivery();
+            updateCartStateUI();
         } else if (action === 'modal-qty') {
             const next = modalQty + parseInt(target.getAttribute('data-change'));
             modalQty = Math.min(MAX_QTY, Math.max(1, next));
@@ -455,6 +584,14 @@ window.addEventListener('DOMContentLoaded', () => {
         updateClearButton(section);
     });
 
+    // Receiver details: save as the customer types and refresh the receipt
+    document.addEventListener('input', (e) => {
+        const field = e.target.closest('[data-receiver]');
+        if (!field) return;
+        setReceiverField(field.getAttribute('data-receiver'), field.value);
+        refreshReceiptText();
+    });
+
     // Close customizer when tapping the dark backdrop
     const woggleModal = document.getElementById('woggle-customizer-modal');
     if (woggleModal) {
@@ -467,12 +604,21 @@ window.addEventListener('DOMContentLoaded', () => {
     const addWoggleBtn = document.getElementById('btn-add-custom-woggle');
     if (addWoggleBtn) {
         addWoggleBtn.addEventListener('click', () => {
-            if (!activeProduct || !activeStyle) return;
+            if (!activeProduct) return;
             const nameInput = document.getElementById('woggle-custom-name');
             const isNormal = activeProduct.kind === 'normal';
             const customName = isNormal ? '' : (nameInput.value.trim() || "Standard");
 
-            addCustomWoggle(activeStyle.name, selectedColor, customName, activeProduct.price, activeProduct.kind, modalQty);
+            addVariantItem({
+                productId: activeProduct.id,
+                title: activeProduct.name,
+                style: activeProduct.styleName || '',
+                option: selectedColor,
+                name: customName,
+                price: activeProduct.price,
+                kind: activeProduct.kind,
+                qty: modalQty
+            });
             if (nameInput) nameInput.value = '';
             woggleModal?.classList.add('hidden');
             updateCartStateUI();
@@ -492,6 +638,30 @@ window.addEventListener('DOMContentLoaded', () => {
             navigator.clipboard.writeText(text).then(() => {
                 showToast(t('toast_copied'));
             }).catch(() => showToast(t('toast_copy_failed')));
+        });
+    }
+
+    // Export the receipt as a PDF for the 55 mm thermal printer
+    const pdfBtn = document.getElementById('export-pdf-btn');
+    if (pdfBtn) {
+        pdfBtn.addEventListener('click', async () => {
+            if (isCartEmpty()) {
+                showToast(t('toast_cart_empty'));
+                return;
+            }
+            pdfBtn.disabled = true;
+            try {
+                const blob = await createReceiptPdf();
+                const d = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                downloadBlob(blob, `nimet-receipt-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.pdf`);
+                showToast(t('toast_pdf_done'));
+            } catch (err) {
+                console.error('PDF error:', err);
+                showToast(t('toast_pdf_failed'));
+            } finally {
+                pdfBtn.disabled = false;
+            }
         });
     }
 

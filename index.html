@@ -46,7 +46,7 @@
     </header>
 
     <!-- ================= MAIN SCROLLABLE CONTENT AREA ================= -->
-    <main class="w-full max-w-lg mx-auto flex-1 pt-20 pb-28 px-4 space-y-6">
+    <main class="w-full max-w-lg mx-auto flex-1 pt-[6.5rem] pb-28 px-4">
         <section id="tab-home-view" class="space-y-4">
             <div class="flex items-center justify-between px-1">
                 <h2 class="text-xs font-black uppercase tracking-wider text-purple-900" data-i18n="home_title">Latest Updates</h2>
@@ -155,12 +155,12 @@
                 </div>
 
                 <div class="flex items-baseline justify-between">
-                    <p class="text-[11px] font-bold text-gray-500 uppercase" data-i18n="modal_selected_color">Selected color</p>
+                    <p id="woggle-selected-label" class="text-[11px] font-bold text-gray-500 uppercase" data-i18n="optionselected_color">Selected color</p>
                     <p id="woggle-modal-color-name" class="text-sm font-black text-[#7414DC]"></p>
                 </div>
 
                 <div>
-                    <label class="text-[11px] font-bold text-gray-500 uppercase block mb-1" data-i18n="modal_color_label">1. Color</label>
+                    <label id="woggle-options-label" class="text-[11px] font-bold text-gray-500 uppercase block mb-1" data-i18n="optiontitle_color">1. Color</label>
                     <div id="woggle-color-selector" class="grid grid-cols-3 gap-2"></div>
                 </div>
 
@@ -192,10 +192,32 @@
             </div>
             <div class="p-4 flex-1 overflow-y-auto space-y-4">
                 <div id="cart-items-container" class="space-y-2"></div>
+
+                <!-- Receiver details (also printed in the receipt and the PDF) -->
+                <div class="space-y-2">
+                    <h4 class="text-[11px] font-bold text-gray-500 uppercase" data-i18n="cart_receiver_title">Receiver Details</h4>
+                    <input type="text" id="receiver-name" data-receiver="name" autocomplete="name" placeholder="Receiver Name" data-i18n-placeholder="cart_receiver_name" class="w-full px-3 py-2 border rounded-xl text-base">
+                    <input type="tel" id="receiver-phone" data-receiver="phone" inputmode="tel" autocomplete="tel" placeholder="Receiver Phone Number" data-i18n-placeholder="cart_receiver_phone" class="w-full px-3 py-2 border rounded-xl text-base">
+                    <textarea id="receiver-address" data-receiver="address" rows="2" autocomplete="street-address" placeholder="Receiver Address" data-i18n-placeholder="cart_receiver_address" class="w-full px-3 py-2 border rounded-xl text-base"></textarea>
+                    <p class="text-[11px] font-bold text-gray-500 uppercase pt-1" data-i18n="cart_delivery_title">Delivery Method</p>
+                    <div class="grid grid-cols-2 gap-2" id="delivery-selector">
+                        <button type="button" data-action="select-delivery" data-value="vet" class="py-2 px-2 text-xs font-bold rounded-xl border transition-all bg-gray-50 text-gray-700 border-gray-200"><span data-i18n="delivery_vet">VET</span><span class="block text-[10px] font-semibold opacity-70" data-delivery-fee></span></button>
+                        <button type="button" data-action="select-delivery" data-value="jt" class="py-2 px-2 text-xs font-bold rounded-xl border transition-all bg-gray-50 text-gray-700 border-gray-200"><span data-i18n="delivery_jt">J&amp;T</span><span class="block text-[10px] font-semibold opacity-70" data-delivery-fee></span></button>
+                        <button type="button" data-action="select-delivery" data-value="delivery" class="py-2 px-2 text-xs font-bold rounded-xl border transition-all bg-gray-50 text-gray-700 border-gray-200"><span data-i18n="delivery_delivery">Delivery</span><span class="block text-[10px] font-semibold opacity-70" data-delivery-fee></span></button>
+                        <button type="button" data-action="select-delivery" data-value="pickup" class="py-2 px-2 text-xs font-bold rounded-xl border transition-all bg-gray-50 text-gray-700 border-gray-200"><span data-i18n="delivery_pickup">Pick up</span><span class="block text-[10px] font-semibold opacity-70" data-delivery-fee></span></button>
+                    </div>
+                    <!-- Price choices of the Delivery method (filled by app.js) -->
+                    <div id="delivery-sub" class="hidden grid grid-cols-3 gap-2"></div>
+                    <p id="delivery-fee-hint" class="hidden text-[11px] font-semibold text-amber-600" data-i18n="delivery_choose_fee">Please choose a delivery fee</p>
+                </div>
                 <div class="bg-gray-900 text-emerald-400 p-3 rounded-xl font-mono text-xs">
                     <pre id="receipt-formatted-output" class="whitespace-pre-wrap">Cart is empty.</pre>
                 </div>
                 <button id="copy-receipt-btn" class="w-full py-3 bg-[#80BE43] text-gray-900 font-bold rounded-xl text-xs" data-i18n="cart_copy_receipt">Copy Receipt</button>
+                <!-- Owner tool: small and quiet so customers do not tap it by accident -->
+                <div class="flex justify-end">
+                    <button id="export-pdf-btn" class="px-2 py-1 rounded-md text-[10px] text-gray-300 hover:text-gray-500 flex items-center gap-1" style="min-height:0"><i class="fa-solid fa-file-pdf"></i><span data-i18n="cart_export_pdf">Export PDF</span></button>
+                </div>
             </div>
             <div class="p-3 bg-gray-50 border-t flex justify-between items-center">
                 <p class="font-black text-lg" id="cart-total-price">$0.00</p>

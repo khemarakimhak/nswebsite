@@ -2,11 +2,83 @@
 
 import { WOGGLE_PRODUCTS, SHOP_PRODUCTS, PIN_PRODUCTS, BADGE_PRODUCTS } from './products.js';
 import { formatPrice } from './currency.js';
-import { t, productName, styleLabel, colorLabel } from './i18n.js';
+import { t, productName, styleLabel, optionLabel } from './i18n.js';
+import { DELIVERY } from '../data/catalog.js';
 
 let cart = { standardItems: {}, customWoggles: [] };
 
+// Receiver details typed in the cart (kept on the phone so customers don't retype them)
+const RECEIVER_KEY = 'nimet_scout_receiver';
+export const DELIVERY_METHODS = ['vet', 'jt', 'delivery', 'pickup'];
+// delivery = chosen method; deliverySub = the chosen price when a method offers several (Delivery)
+let receiver = { name: '', phone: '', address: '', delivery: '', deliverySub: '' };
+
+export function getReceiver() {
+    return receiver;
+}
+
+export function setReceiverField(field, value) {
+    if (!(field in receiver)) return;
+    receiver[field] = value;
+    try {
+        localStorage.setItem(RECEIVER_KEY, JSON.stringify(receiver));
+    } catch (e) {
+        console.error("Storage save error:", e);
+    }
+}
+
+export function deliveryLabel(code) {
+    return DELIVERY_METHODS.includes(code) ? t(`delivery_${code}`) : '';
+}
+
+// Choose a delivery method. Choosing the same one again clears it.
+export function setDeliveryMethod(code) {
+    const next = receiver.delivery === code ? '' : code;
+    setReceiverField('delivery', next);
+    setReceiverField('deliverySub', '');
+}
+
+export function setDeliveryFee(amount) {
+    const current = Number(receiver.deliverySub);
+    setReceiverField('deliverySub', current === amount ? '' : amount);
+}
+
+// Delivery fee in USD for the chosen method (0 if nothing chosen or the fee still has to be picked)
+export function getDeliveryFee() {
+    const config = DELIVERY[receiver.delivery];
+    if (!config) return 0;
+    if (Array.isArray(config.fees)) {
+        const picked = Number(receiver.deliverySub);
+        return config.fees.includes(picked) ? picked : 0;
+    }
+    return config.fee || 0;
+}
+
+// True when the method needs a price choice that has not been made yet
+export function needsDeliveryFeeChoice() {
+    const config = DELIVERY[receiver.delivery];
+    return !!(config && Array.isArray(config.fees) && getDeliveryFee() === 0);
+}
+
+// The delivery fee as one extra row for the cart / receipt / PDF (null when free or nothing chosen)
+export function getDeliveryRow() {
+    if (isCartEmpty()) return null;
+    const amount = getDeliveryFee();
+    if (amount <= 0) return null;
+    return { label: `${t('delivery_fee_label')} (${deliveryLabel(receiver.delivery)})`, amount };
+}
+
+// "customWoggles" holds every item that was added from a choice menu:
+// woggles (style + color + name), Round/Square Lis woggles, Rank Badge...
+// Its field  color  holds the chosen option (a color, "White-Red", "Star Class"...).
+
 export function loadCartFromStorage() {
+    try {
+        const savedReceiver = localStorage.getItem(RECEIVER_KEY);
+        if (savedReceiver) receiver = { ...receiver, ...JSON.parse(savedReceiver) };
+    } catch (e) {
+        console.error("Storage load error:", e);
+    }
     try {
         const stored = localStorage.getItem('nimet_scout_cart');
         if (stored) {
@@ -33,21 +105,34 @@ export function getCart() {
     return cart;
 }
 
-// kind: 'custom' (has a name) or 'normal' (color only). Prices are in USD (per piece).
-// Identical woggles (same kind, style, color and name) are merged into one line with a quantity.
-export function addCustomWoggle(style, color, name, price, kind = 'custom', qty = 1) {
-    const cleanName = name || '';
+// item = { productId, title, style, option, name, price, kind, qty }   (prices in USD, per piece)
+// Identical items are merged into one line with a quantity.
+export function addVariantItem(item) {
+    const entry = {
+        productId: item.productId || '',
+        title: item.title || '',
+        kind: item.kind || 'custom',
+        style: item.style || '',
+        color: item.option,
+        name: item.name || '',
+        price: item.price,
+        qty: item.qty || 1
+    };
     const existing = cart.customWoggles.find(w =>
-        (w.kind || 'custom') === kind && w.style === style && w.color === color && (w.name || '') === cleanName);
+        (w.productId || '') === entry.productId &&
+        (w.kind || 'custom') === entry.kind &&
+        (w.style || '') === entry.style &&
+        w.color === entry.color &&
+        (w.name || '') === entry.name);
     if (existing) {
-        existing.qty += qty;
+        existing.qty += entry.qty;
     } else {
-        cart.customWoggles.push({ kind, style, color, name: cleanName, price, qty });
+        cart.customWoggles.push(entry);
     }
     saveCartToStorage();
 }
 
-// +1 / -1 on a woggle line in the cart (going below 1 removes it)
+// +1 / -1 on a line in the cart (going below 1 removes it)
 export function changeWoggleQty(index, change) {
     const w = cart.customWoggles[index];
     if (!w) return;
@@ -77,17 +162,18 @@ export function clearCartState() {
     saveCartToStorage();
 }
 
-// Cart/receipt label, in the current language (the cart itself stores English names)
-export function woggleLabel(w) {
-    const vars = { style: styleLabel(w.style), color: colorLabel(w.color) };
-    return t(w.kind === 'normal' ? 'woggle_normal_cart_label' : 'woggle_cart_label', vars);
-}
-
-export function isCartEmpty() {
-    return getValidStandardEntries().length === 0 && cart.customWoggles.length === 0;
-}
-
 const allProducts = () => [...WOGGLE_PRODUCTS, ...SHOP_PRODUCTS, ...PIN_PRODUCTS, ...BADGE_PRODUCTS];
+
+// Cart/receipt label in the current language (the cart itself stores English names)
+export function woggleLabel(w) {
+    if (w.style) {
+        const vars = { style: styleLabel(w.style), color: optionLabel(w.color) };
+        return t(w.kind === 'normal' ? 'woggle_normal_cart_label' : 'woggle_cart_label', vars);
+    }
+    const prod = allProducts().find(p => p.id === w.productId);
+    const title = prod ? productName(prod) : (w.title || '');
+    return `${title} (${optionLabel(w.color)})`;
+}
 
 // Standard items still in the catalog (items you removed from catalog.js are ignored)
 export function getValidStandardEntries() {
@@ -97,41 +183,64 @@ export function getValidStandardEntries() {
         .filter(e => e.prod && e.qty > 0);
 }
 
-// Color-Sorted Receipt Generator (Color -> Style -> Name). Uses the current display currency.
-export function generateFormattedReceipt() {
-    const standard = getValidStandardEntries();
-    const hasWoggles = cart.customWoggles.length > 0;
+export function isCartEmpty() {
+    return getValidStandardEntries().length === 0 && cart.customWoggles.length === 0;
+}
 
-    if (standard.length === 0 && !hasWoggles) {
+// The cart as printable rows, in receipt order (standard items first, then choice-menu items
+// sorted by option/color -> style -> name). Labels are in the current language.
+export function getReceiptItems() {
+    const rows = getValidStandardEntries().map(({ prod, qty }) => ({
+        label: productName(prod), qty, unit: prod.price, subtotal: prod.price * qty
+    }));
+
+    const sorted = [...cart.customWoggles].sort((a, b) => {
+        if (a.color !== b.color) return a.color.localeCompare(b.color);
+        if ((a.style || '') !== (b.style || '')) return (a.style || '').localeCompare(b.style || '');
+        if ((a.productId || '') !== (b.productId || '')) return (a.productId || '').localeCompare(b.productId || '');
+        return (a.name || '').localeCompare(b.name || '');
+    });
+
+    sorted.forEach(w => {
+        const nameText = (w.kind === 'normal' || !w.name) ? '' : ` ${t('receipt_name', { name: w.name })}`;
+        rows.push({ label: `${woggleLabel(w)}${nameText}`, qty: w.qty, unit: w.price, subtotal: w.price * w.qty });
+    });
+    return rows;
+}
+
+export function getItemsTotal() {
+    return getReceiptItems().reduce((sum, r) => sum + r.subtotal, 0);
+}
+
+// Items + delivery fee
+export function getCartTotal() {
+    const row = getDeliveryRow();
+    return getItemsTotal() + (row ? row.amount : 0);
+}
+
+// Text receipt (shown in the cart and copied). Uses the current language and currency.
+export function generateFormattedReceipt() {
+    if (isCartEmpty()) {
         return t('receipt_empty');
     }
 
-    let total = 0.0;
-    let lines = [t('receipt_title') + "\n"];
+    const dash = v => (v && String(v).trim()) ? String(v).trim() : '-';
+    const lines = [t('receipt_title') + "\n"];
 
-    standard.forEach(({ prod, qty }) => {
-        const subtotal = prod.price * qty;
-        total += subtotal;
-        lines.push(`• ${productName(prod)}: ${qty}x @ ${formatPrice(prod.price)} = ${formatPrice(subtotal)}`);
+    lines.push(`${t('receipt_receiver')}: ${dash(receiver.name)}`);
+    lines.push(`${t('receipt_phone')}: ${dash(receiver.phone)}`);
+    lines.push(`${t('receipt_address')}: ${dash(receiver.address)}`);
+    lines.push(`${t('receipt_delivery')}: ${dash(deliveryLabel(receiver.delivery))}`);
+    lines.push("");
+
+    getReceiptItems().forEach(r => {
+        lines.push(`• ${r.label}: ${r.qty}x @ ${formatPrice(r.unit)} = ${formatPrice(r.subtotal)}`);
     });
 
-    if (hasWoggles) {
-        const sorted = [...cart.customWoggles].sort((a, b) => {
-            if (a.color !== b.color) return a.color.localeCompare(b.color);
-            if (a.style !== b.style) return a.style.localeCompare(b.style);
-            if ((a.kind || 'custom') !== (b.kind || 'custom')) return (a.kind || 'custom').localeCompare(b.kind || 'custom');
-            return (a.name || '').localeCompare(b.name || '');
-        });
+    const feeRow = getDeliveryRow();
+    if (feeRow) lines.push(`• ${feeRow.label}: ${formatPrice(feeRow.amount)}`);
 
-        sorted.forEach(w => {
-            const subtotal = w.price * w.qty;
-            total += subtotal;
-            const nameText = w.kind === 'normal' ? '' : ` ${t('receipt_name', { name: w.name })}`;
-            lines.push(`• ${woggleLabel(w)}${nameText}: ${w.qty}x @ ${formatPrice(w.price)} = ${formatPrice(subtotal)}`);
-        });
-    }
-
-    lines.push("\n" + t('receipt_total', { total: formatPrice(total) }));
+    lines.push("\n" + t('receipt_total', { total: formatPrice(getCartTotal()) }));
     lines.push(t('receipt_thanks'));
     return lines.join("\n");
 }
