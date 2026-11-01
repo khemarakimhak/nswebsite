@@ -1,17 +1,40 @@
 /* css/styles.css - Nimet Scout Shop Custom Styles & Design Tokens */
 
+/* ---------- Khmer font (k5.woff2 sits in this same css/ folder) ----------
+   unicode-range = only Khmer letters use this font.
+   English letters and numbers keep using the normal system font. */
+@font-face {
+font-family: 'K5';
+src: url('k5.woff2') format('woff2');
+font-weight: 100 900;   /* one file covers every weight, so no ugly fake-bold */
+font-style: normal;
+font-display: swap;
+unicode-range: U+1780-17FF, U+19E0-19FF, U+200B-200D;
+}
+
 :root {
 --brand-purple: #7414DC;
 --brand-gold: #F4A81E;
 --brand-green: #80BE43;
 --brand-bg: #ffe7e5;
+--font-main: 'K5', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 html, body {
 background-color: var(--brand-bg) !important;
-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+font-family: var(--font-main);
 -webkit-tap-highlight-color: transparent;
 touch-action: manipulation;
+}
+
+/* Buttons and text boxes must use the same font (Khmer names typed by customers too) */
+button, input, select, textarea {
+font-family: inherit;
+}
+
+/* Receipt box is monospace for English; Khmer letters still use K5 */
+.font-mono, pre {
+font-family: 'K5', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
 }
 
 /* Minimum recommended touch target size */
