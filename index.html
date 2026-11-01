@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Nimet Scout Shop</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -51,7 +51,7 @@
             <div class="rounded-3xl bg-gradient-to-br from-[#7414DC] via-purple-800 to-[#7414DC] text-white p-6 shadow-xl relative overflow-hidden">
                 <span class="inline-block px-3 py-1 bg-[#80BE43] text-gray-900 font-black text-[10px] rounded-full uppercase tracking-wider mb-3">Welcome Scouts</span>
                 <h2 class="text-2xl font-black leading-tight mb-2">Build Custom Scout Gear Instantly</h2>
-                <p class="text-xs text-purple-200 leading-relaxed mb-4">Design your own customized Scout Woggles with styles like Lis, Romdoul & Angkor, complete with name tags and color choices.</p>
+                <p class="text-xs text-purple-200 leading-relaxed mb-4">Design your own customized Scout Woggles in Scout, Romdoul, Angkor or Red Cross styles, with name tags and color choices.</p>
                 <button onclick="switchTab('woggle')" class="px-5 py-3 bg-[#F4A81E] text-gray-900 font-black text-xs rounded-2xl shadow-lg active:scale-95 transition-all flex items-center gap-2">
                     <span>Create Custom Woggle</span> <i class="fa-solid fa-arrow-right"></i>
                 </button>
@@ -121,26 +121,41 @@
         </div>
     </nav>
 
-    <!-- Customizer Modal -->
+    <!-- Woggle Customizer Modal (one per style, filled in by app.js) -->
     <div id="woggle-customizer-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center hidden">
-        <div class="bg-white w-full max-w-lg rounded-t-3xl p-5 space-y-4 animate-slide-up">
-            <div class="flex justify-between items-center pb-2 border-b">
-                <h3 class="font-bold text-sm">Custom Scout Woggle</h3>
-                <button onclick="closeWoggleModal()"><i class="fa-solid fa-xmark"></i></button>
+        <div id="woggle-modal-sheet" class="bg-white w-full max-w-lg rounded-t-3xl max-h-[92vh] overflow-y-auto animate-slide-up" style="padding-bottom: env(safe-area-inset-bottom);">
+            <!-- Sticky title bar -->
+            <div class="sticky top-0 z-10 bg-white flex justify-between items-center px-5 py-3 border-b">
+                <h3 id="woggle-modal-title" class="font-black text-sm text-gray-900">Woggle</h3>
+                <button onclick="closeWoggleModal()" aria-label="Close" class="w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 active:bg-gray-100"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div>
-                <label class="text-[11px] font-bold text-gray-500 uppercase block mb-1">1. Style</label>
-                <div id="woggle-style-selector" class="grid grid-cols-3 gap-2"></div>
+
+            <div class="p-5 space-y-4">
+                <!-- Square preview image on top -->
+                <div class="w-full aspect-square bg-purple-50 rounded-3xl overflow-hidden relative flex items-center justify-center border border-purple-100 mx-auto" style="max-width: min(100%, 42vh);">
+                    <img id="woggle-modal-image" src="" alt="Woggle preview" class="w-full h-full object-cover">
+                    <div id="woggle-modal-fallback" class="w-full h-full items-center justify-center" style="display:none;"></div>
+                </div>
+
+                <div class="flex items-baseline justify-between">
+                    <p class="text-[11px] font-bold text-gray-500 uppercase">Selected color</p>
+                    <p id="woggle-modal-color-name" class="text-sm font-black text-[#7414DC]"></p>
+                </div>
+
+                <div>
+                    <label class="text-[11px] font-bold text-gray-500 uppercase block mb-1">1. Color</label>
+                    <div id="woggle-color-selector" class="grid grid-cols-3 gap-2"></div>
+                </div>
+
+                <div>
+                    <label for="woggle-custom-name" class="text-[11px] font-bold text-gray-500 uppercase block mb-1">2. Name</label>
+                    <input type="text" id="woggle-custom-name" placeholder="Enter name" class="w-full px-3 py-2 border rounded-xl text-base">
+                </div>
+
+                <button id="btn-add-custom-woggle" class="w-full py-3 bg-[#7414DC] text-white font-bold rounded-xl text-sm active:scale-[0.98] transition-all">
+                    Add to Cart • <span id="woggle-modal-price">$5.00</span>
+                </button>
             </div>
-            <div>
-                <label class="text-[11px] font-bold text-gray-500 uppercase block mb-1">2. Color</label>
-                <div id="woggle-color-selector" class="grid grid-cols-3 gap-2"></div>
-            </div>
-            <div>
-                <label class="text-[11px] font-bold text-gray-500 uppercase block mb-1">3. Name</label>
-                <input type="text" id="woggle-custom-name" placeholder="Enter name" class="w-full px-3 py-2 border rounded-xl text-sm">
-            </div>
-            <button id="btn-add-custom-woggle" class="w-full py-3 bg-[#7414DC] text-white font-bold rounded-xl text-xs">Add Woggle ($5.00)</button>
         </div>
     </div>
 
@@ -149,7 +164,7 @@
         <div class="bg-white w-full max-w-lg rounded-t-3xl max-h-[90vh] flex flex-col overflow-hidden animate-slide-up">
             <div class="px-5 py-3 bg-[#7414DC] text-white flex justify-between items-center">
                 <h3 class="font-bold text-sm">Cart & Receipt</h3>
-                <button onclick="toggleCartModal(false)"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="toggleCartModal(false)" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="p-4 flex-1 overflow-y-auto space-y-4">
                 <div id="cart-items-container" class="space-y-2"></div>

@@ -8,9 +8,13 @@ export function loadCartFromStorage() {
     try {
         const stored = localStorage.getItem('nimet_scout_cart');
         if (stored) {
-            cart = JSON.parse(stored);
+            const parsed = JSON.parse(stored);
+            cart = {
+                standardItems: parsed.standardItems || {},
+                customWoggles: parsed.customWoggles || []
+            };
         }
-    } catch(e) {
+    } catch (e) {
         console.error("Storage load error:", e);
     }
 }
@@ -18,7 +22,7 @@ export function loadCartFromStorage() {
 export function saveCartToStorage() {
     try {
         localStorage.setItem('nimet_scout_cart', JSON.stringify(cart));
-    } catch(e) {
+    } catch (e) {
         console.error("Storage save error:", e);
     }
 }
@@ -27,8 +31,9 @@ export function getCart() {
     return cart;
 }
 
-export function addCustomWoggle(style, color, name) {
-    cart.customWoggles.push({ style, color, name, price: 5.00 });
+// style = display name (e.g. "Scout", "Red Cross")
+export function addCustomWoggle(style, color, name, price = 5.00) {
+    cart.customWoggles.push({ style, color, name, price });
     saveCartToStorage();
 }
 
@@ -86,7 +91,7 @@ export function generateFormattedReceipt() {
 
         sortedWoggles.forEach(w => {
             total += w.price;
-            lines.push(`• Scout Woggle (${w.style}, ${w.color}) [Name: ${w.name}] = $${w.price.toFixed(2)}`);
+            lines.push(`• ${w.style} Woggle (${w.color}) [Name: ${w.name}] = $${w.price.toFixed(2)}`);
         });
     }
 

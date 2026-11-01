@@ -1,22 +1,23 @@
 // js/app.js - Main UI controller & Event Handlers
 
-import { 
-    WOGGLE_PRODUCTS, 
-    SHOP_PRODUCTS, 
-    PIN_PRODUCTS, 
-    BADGE_PRODUCTS, 
-    WOGGLE_STYLES, 
-    WOGGLE_COLORS 
+import {
+    WOGGLE_PRODUCTS,
+    SHOP_PRODUCTS,
+    PIN_PRODUCTS,
+    BADGE_PRODUCTS,
+    WOGGLE_STYLES,
+    COLOR_HEX,
+    colorSlug
 } from './products.js';
 
-import { 
-    loadCartFromStorage, 
-    getCart, 
-    addCustomWoggle, 
-    removeCustomWoggle, 
-    changeStandardQty, 
-    clearCartState, 
-    generateFormattedReceipt 
+import {
+    loadCartFromStorage,
+    getCart,
+    addCustomWoggle,
+    removeCustomWoggle,
+    changeStandardQty,
+    clearCartState,
+    generateFormattedReceipt
 } from './cart.js';
 
 // SVG Definitions for icons
@@ -25,22 +26,29 @@ const SVG_ICONS = {
     pin: `<svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M12 2C8.7 2 6 4.7 6 8C6 11.5 9 14.5 11 16.2V21C11 21.6 11.4 22 12 22C12.6 22 13 21.6 13 21V16.2C15 14.5 18 11.5 18 8C18 4.7 15.3 2 12 2ZM12 14.2C10.3 12.7 8 10.3 8 8C8 5.8 9.8 4 12 4C14.2 4 16 5.8 16 8C16 10.3 13.7 12.7 12 14.2ZM12 6C10.9 6 10 6.9 10 8C10 9.1 10.9 10 12 10C13.1 10 14 9.1 14 8C14 6.9 13.1 6 12 6Z"/></svg>`
 };
 
-let selectedStyle = WOGGLE_STYLES[0];
-let selectedColor = WOGGLE_COLORS[0];
+// Current woggle customizer state
+let activeStyle = WOGGLE_STYLES[0];
+let selectedColor = activeStyle.colors[0];
 let currentLang = 'kh'; // Default to Khmer
+
+function escapeHTML(str) {
+    return String(str).replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[ch]));
+}
 
 // Render Product Grids
 function renderGrid(containerId, products) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    
+
     container.innerHTML = products.map(p => {
         const fallbackElement = p.svgIcon ? SVG_ICONS[p.svgIcon] : `<i class="fa-solid ${p.icon} text-3xl"></i>`;
-        
+
         return `
         <div class="bg-white rounded-3xl p-3 border border-purple-100 shadow-sm flex flex-col justify-between overflow-hidden">
             <div class="w-full aspect-square bg-purple-50 rounded-2xl flex items-center justify-center text-[#7414DC] mb-3 relative overflow-hidden group">
-                <img src="${p.image}" alt="${p.name}" 
+                <img src="${p.image}" alt="${p.name}"
                      class="w-full h-full object-cover rounded-2xl"
                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
                 <div class="w-full h-full flex items-center justify-center" style="display: none;">
@@ -56,11 +64,11 @@ function renderGrid(containerId, products) {
                 </div>
 
                 ${p.isCustom ? `
-                    <button data-action="open-woggle-modal" class="w-9 h-9 bg-[#F4A81E] text-gray-900 rounded-2xl font-black text-sm flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition-all">
+                    <button data-action="open-woggle-modal" data-style="${p.styleId}" aria-label="Customize ${p.name}" class="w-9 h-9 bg-[#F4A81E] text-gray-900 rounded-2xl font-black text-sm flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition-all">
                         <i class="fa-solid fa-sliders"></i>
                     </button>
                 ` : `
-                    <button data-action="add-standard" data-id="${p.id}" class="w-9 h-9 bg-[#7414DC] hover:bg-purple-800 text-white rounded-2xl font-black text-sm flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition-all">
+                    <button data-action="add-standard" data-id="${p.id}" aria-label="Add ${p.name}" class="w-9 h-9 bg-[#7414DC] hover:bg-purple-800 text-white rounded-2xl font-black text-sm flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition-all">
                         <i class="fa-solid fa-plus"></i>
                     </button>
                 `}
@@ -79,7 +87,7 @@ function renderAllGrids() {
 // Tab Switching
 export function switchTab(tabName) {
     const tabs = ['home', 'woggle', 'shop', 'pin', 'badge'];
-    
+
     tabs.forEach(t => {
         const view = document.getElementById(`tab-${t}-view`);
         const btn = document.getElementById(`nav-btn-${t}`);
@@ -112,11 +120,7 @@ function updateLangUI(animated = true) {
 
     if (!sliderPill || !btnEn || !btnKh) return;
 
-    if (!animated) {
-        sliderPill.style.transition = 'none';
-    } else {
-        sliderPill.style.transition = 'all 0.3s ease-out';
-    }
+    sliderPill.style.transition = animated ? 'all 0.3s ease-out' : 'none';
 
     if (currentLang === 'en') {
         sliderPill.style.left = '4px';
@@ -129,24 +133,74 @@ function updateLangUI(animated = true) {
     }
 }
 
-// Customizer Selector Options
-function renderWoggleSelectors() {
-    const styleContainer = document.getElementById('woggle-style-selector');
-    if (styleContainer) {
-        styleContainer.innerHTML = WOGGLE_STYLES.map(s => `
-            <button data-action="select-style" data-value="${s}" class="py-2 px-3 text-xs font-bold rounded-xl border transition-all ${selectedStyle === s ? 'bg-[#7414DC] text-white border-[#7414DC]' : 'bg-gray-50 text-gray-700 border-gray-200'}">
-                ${s}
-            </button>
-        `).join('');
-    }
+// ---------- Woggle customizer (one standalone customizer per style) ----------
 
+// Square preview: tries a per-color image first, then the style image, then a tinted icon.
+function updateWoggleImage() {
+    const img = document.getElementById('woggle-modal-image');
+    const fallback = document.getElementById('woggle-modal-fallback');
+    if (!img || !fallback) return;
+
+    const colorSrc = `assets/images/woggles/${activeStyle.id}-${colorSlug(selectedColor)}.jpg`;
+    const sources = [colorSrc, activeStyle.image];
+    let attempt = 0;
+
+    fallback.style.display = 'none';
+    fallback.style.color = COLOR_HEX[selectedColor] || '#7414DC';
+    fallback.innerHTML = SVG_ICONS.woggle.replace('w-8 h-8', 'w-24 h-24');
+
+    img.style.display = 'block';
+    img.onerror = () => {
+        attempt++;
+        if (attempt < sources.length) {
+            img.src = sources[attempt];
+        } else {
+            img.style.display = 'none';
+            fallback.style.display = 'flex';
+        }
+    };
+    img.src = sources[0];
+}
+
+function renderWoggleColors() {
     const colorContainer = document.getElementById('woggle-color-selector');
     if (colorContainer) {
-        colorContainer.innerHTML = WOGGLE_COLORS.map(c => `
-            <button data-action="select-color" data-value="${c}" class="py-2 px-2 text-[11px] font-bold rounded-xl border transition-all ${selectedColor === c ? 'bg-gray-900 text-white border-gray-900' : 'bg-gray-50 text-gray-700 border-gray-200'}">
-                ${c}
-            </button>
-        `).join('');
+        colorContainer.innerHTML = activeStyle.colors.map(c => {
+            const active = selectedColor === c;
+            return `
+            <button data-action="select-color" data-value="${c}"
+                class="py-2 px-2 text-[11px] font-bold rounded-xl border transition-all flex items-center justify-center gap-1.5 ${active ? 'bg-gray-900 text-white border-gray-900' : 'bg-gray-50 text-gray-700 border-gray-200'}">
+                <span class="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0" style="background:${COLOR_HEX[c] || '#ccc'}"></span>
+                <span class="leading-tight">${c}</span>
+            </button>`;
+        }).join('');
+    }
+
+    const colorLabel = document.getElementById('woggle-modal-color-name');
+    if (colorLabel) colorLabel.innerText = selectedColor;
+}
+
+function openWoggleModal(styleId) {
+    const style = WOGGLE_STYLES.find(s => s.id === styleId);
+    if (!style) return;
+
+    activeStyle = style;
+    selectedColor = style.colors[0];
+
+    const title = document.getElementById('woggle-modal-title');
+    if (title) title.innerText = `${style.name} Woggle`;
+
+    const priceEl = document.getElementById('woggle-modal-price');
+    if (priceEl) priceEl.innerText = `$${style.price.toFixed(2)}`;
+
+    renderWoggleColors();
+    updateWoggleImage();
+
+    const modal = document.getElementById('woggle-customizer-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        const sheet = document.getElementById('woggle-modal-sheet');
+        if (sheet) sheet.scrollTop = 0;
     }
 }
 
@@ -191,10 +245,10 @@ export function updateCartStateUI() {
         itemsHTML += `
             <div class="bg-purple-50/70 border border-purple-100 p-3 rounded-2xl flex items-center justify-between text-xs">
                 <div>
-                    <h5 class="font-extrabold text-purple-950">Scout Woggle (${w.style}, <span class="text-rose-600">${w.color}</span>)</h5>
-                    <p class="text-[11px] text-gray-600">Name: <strong class="text-gray-900">${w.name}</strong> • $${w.price.toFixed(2)}</p>
+                    <h5 class="font-extrabold text-purple-950">${escapeHTML(w.style)} Woggle (<span class="text-rose-600">${escapeHTML(w.color)}</span>)</h5>
+                    <p class="text-[11px] text-gray-600">Name: <strong class="text-gray-900">${escapeHTML(w.name)}</strong> • $${w.price.toFixed(2)}</p>
                 </div>
-                <button data-action="remove-custom" data-index="${idx}" class="w-7 h-7 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors flex items-center justify-center">
+                <button data-action="remove-custom" data-index="${idx}" aria-label="Remove" class="w-7 h-7 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors flex items-center justify-center">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
             </div>
@@ -229,30 +283,27 @@ export function showToast(msg) {
 window.addEventListener('DOMContentLoaded', () => {
     loadCartFromStorage();
     renderAllGrids();
-    renderWoggleSelectors();
     updateCartStateUI();
     updateLangUI(false);
 
     // Event delegation for clicks
     document.addEventListener('click', (e) => {
-        const target = e.target.closest('[data-action], [onclick]');
+        const target = e.target.closest('[data-action]');
         if (!target) return;
 
         const action = target.getAttribute('data-action');
-        
+
         if (action === 'open-woggle-modal') {
-            document.getElementById('woggle-customizer-modal')?.classList.remove('hidden');
+            openWoggleModal(target.getAttribute('data-style'));
         } else if (action === 'add-standard') {
             const id = target.getAttribute('data-id');
             changeStandardQty(id, 1);
             updateCartStateUI();
             showToast("Item added to cart!");
-        } else if (action === 'select-style') {
-            selectedStyle = target.getAttribute('data-value');
-            renderWoggleSelectors();
         } else if (action === 'select-color') {
             selectedColor = target.getAttribute('data-value');
-            renderWoggleSelectors();
+            renderWoggleColors();
+            updateWoggleImage();
         } else if (action === 'change-qty') {
             const id = target.getAttribute('data-id');
             const change = parseInt(target.getAttribute('data-change'));
@@ -266,17 +317,25 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Close customizer when tapping the dark backdrop
+    const woggleModal = document.getElementById('woggle-customizer-modal');
+    if (woggleModal) {
+        woggleModal.addEventListener('click', (e) => {
+            if (e.target === woggleModal) woggleModal.classList.add('hidden');
+        });
+    }
+
     // Handle Custom Woggle Submission
     const addWoggleBtn = document.getElementById('btn-add-custom-woggle');
     if (addWoggleBtn) {
         addWoggleBtn.addEventListener('click', () => {
             const nameInput = document.getElementById('woggle-custom-name');
             const customName = nameInput.value.trim() || "Standard";
-            addCustomWoggle(selectedStyle, selectedColor, customName);
+            addCustomWoggle(activeStyle.name, selectedColor, customName, activeStyle.price);
             nameInput.value = '';
             document.getElementById('woggle-customizer-modal')?.classList.add('hidden');
             updateCartStateUI();
-            showToast("Custom Woggle added!");
+            showToast(`${activeStyle.name} Woggle added!`);
         });
     }
 
@@ -291,7 +350,7 @@ window.addEventListener('DOMContentLoaded', () => {
             }
             navigator.clipboard.writeText(text).then(() => {
                 showToast("Receipt copied!");
-            }).catch(() => showToast("Copied!"));
+            }).catch(() => showToast("Copy failed"));
         });
     }
 
