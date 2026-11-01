@@ -36,7 +36,10 @@ js/                     <- code; the owner normally does not edit these
   i18n.js               language state, t(), name/option translation helpers
   currency.js           formatPrice(): USD in English, riel in Khmer
   pdf.js                55 mm thermal receipt PDF (canvas -> PDF, no library)
+  saved-orders.js       saved customers + carts (localStorage), one per receiver name
+  icons.js              the Scout logo as inline icon paths (used for every woggle icon)
 assets/                 pictures, one folder per section (see below)
+  logo/                 nimet-scout-store-logo.svg (header), scout-logo.svg (source of the woggle icon)
   shop/ pin/ badge/ woggle/ news/
 ```
 
@@ -62,6 +65,16 @@ assets/                 pictures, one folder per section (see below)
   and shown as its own row ("Delivery fee (VET)") in the cart, the copied receipt and the PDF. No fee row for Pick up, and no
   fee is counted while the cart is empty. Tapping a chosen method (or fee) again clears it. Prices like 1.625 are shown
   as `$1.625` in English (`formatPrice` keeps a 3rd decimal only when needed).
+- **Saved orders:** the clipboard icon button to the right of the Receiver Name box opens a panel listing saved customers.
+  "Save current" stores the cart + receiver details under the receiver name (same name = update, name required). Tapping a
+  row loads that cart back for adding more products (asks first if the current cart has unsaved items); the trash button
+  on the right deletes it (with a confirm) once the order is done. Stored in `localStorage` key `nimet_scout_saved_orders`,
+  so the list exists only on that phone/browser and is not shared between devices.
+- **Logos:** the header shows `assets/logo/nimet-scout-store-logo.svg` (falls back to a compass icon if the file is missing).
+  Every woggle icon (bottom menu, picture-less product cards, the choice menu) is the Scout logo from `js/icons.js`,
+  drawn with `currentColor` so it follows the active/inactive and option colors. Pin and badge icons are unchanged.
+  The store logo's "Scout Shop" text is live text; its font was changed from GT Planar (not available on the web) to a
+  bold sans-serif. For the exact brand font, export the logo with text converted to outlines.
 - **Receipt text:** `generateFormattedReceipt()` follows the current language and currency.
 - **PDF:** always Khmer and riel, whatever the site language. Width 55 mm, length grows with the items.
   The Export PDF button is intentionally small and faint (owner tool, so customers do not tap it by accident);

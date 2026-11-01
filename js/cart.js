@@ -17,14 +17,18 @@ export function getReceiver() {
     return receiver;
 }
 
-export function setReceiverField(field, value) {
-    if (!(field in receiver)) return;
-    receiver[field] = value;
+function saveReceiver() {
     try {
         localStorage.setItem(RECEIVER_KEY, JSON.stringify(receiver));
     } catch (e) {
         console.error("Storage save error:", e);
     }
+}
+
+export function setReceiverField(field, value) {
+    if (!(field in receiver)) return;
+    receiver[field] = value;
+    saveReceiver();
 }
 
 export function deliveryLabel(code) {
@@ -43,15 +47,19 @@ export function setDeliveryFee(amount) {
     setReceiverField('deliverySub', current === amount ? '' : amount);
 }
 
-// Delivery fee in USD for the chosen method (0 if nothing chosen or the fee still has to be picked)
-export function getDeliveryFee() {
-    const config = DELIVERY[receiver.delivery];
+// Delivery fee in USD for a receiver (0 if nothing chosen or the price still has to be picked)
+export function deliveryFeeFor(rec) {
+    const config = DELIVERY[rec.delivery];
     if (!config) return 0;
     if (Array.isArray(config.fees)) {
-        const picked = Number(receiver.deliverySub);
+        const picked = Number(rec.deliverySub);
         return config.fees.includes(picked) ? picked : 0;
     }
     return config.fee || 0;
+}
+
+export function getDeliveryFee() {
+    return deliveryFeeFor(receiver);
 }
 
 // True when the method needs a price choice that has not been made yet
@@ -155,6 +163,23 @@ export function changeStandardQty(id, change) {
         cart.standardItems[id] = updated;
     }
     saveCartToStorage();
+}
+
+// A copy of the whole order (cart + receiver details) for the saved-orders list
+export function getSnapshot() {
+    return JSON.parse(JSON.stringify({ cart, receiver }));
+}
+
+// Replace the current cart and receiver details with a saved order
+export function restoreSnapshot(snapshot) {
+    const saved = JSON.parse(JSON.stringify(snapshot));
+    cart = {
+        standardItems: saved.cart.standardItems || {},
+        customWoggles: (saved.cart.customWoggles || []).map(w => ({ ...w, qty: w.qty || 1 }))
+    };
+    receiver = { name: '', phone: '', address: '', delivery: '', deliverySub: '', ...saved.receiver };
+    saveCartToStorage();
+    saveReceiver();
 }
 
 export function clearCartState() {

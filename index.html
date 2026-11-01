@@ -16,7 +16,10 @@
     <!-- ================= FIXED TOP HEADER ================= -->
     <header class="fixed top-0 left-0 right-0 z-40 bg-[#7414DC] text-white px-4 py-3 shadow-md flex items-center justify-between">
         <div class="flex items-center space-x-2.5 cursor-pointer" onclick="switchTab('home')">
-            <div class="w-9 h-9 rounded-2xl bg-[#F4A81E] text-white flex items-center justify-center font-bold text-base shadow-sm shrink-0">
+            <img src="assets/logo/nimet-scout-store-logo.svg" alt="Nimet Scout Shop" class="w-11 h-11 shrink-0 object-contain"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <!-- shown only if the logo file is missing -->
+            <div class="w-9 h-9 rounded-2xl bg-[#F4A81E] text-white items-center justify-center font-bold text-base shadow-sm shrink-0" style="display:none">
                 <i class="fa-solid fa-compass"></i>
             </div>
             <div>
@@ -121,7 +124,7 @@
             </button>
             <button onclick="switchTab('woggle')" id="nav-btn-woggle" class="py-1.5 flex flex-col items-center justify-center text-center transition-all rounded-2xl text-gray-400 hover:text-[#7414DC]">
                 <div class="h-5 flex items-center justify-center mb-0.5">
-                    <svg class="nav-icon-svg" viewBox="0 0 24 24"><path d="M12.75 2.25c-.41 0-.75.34-.75.75v3.19c-.83-.43-1.84-.52-2.76-.23-1.34.42-2.34 1.54-2.58 2.93-.15.86.08 1.73.61 2.4.52.66 1.3 1.05 2.14 1.08.38.01.76-.06 1.12-.2.4.67 1.03 1.18 1.77 1.43v.8c-1.32.18-2.55.77-3.5 1.68C7.45 17.41 6.5 19.38 6.5 21.5c0 .41.34.75.75.75s.75-.34.75-.75c0-1.74.78-3.32 2.06-4.38.9-.74 2.04-1.17 3.19-1.22 1.15.05 2.29.48 3.19 1.22 1.28 1.06 2.06 2.64 2.06 4.38 0 .41.34.75.75.75s.75-.34.75-.75c0-2.12-.95-4.09-2.8-5.42-.95-.91-2.18-1.5-3.5-1.68v-.8c.74-.25 1.37-.76 1.77-1.43.36.14.74.21 1.12.2.84-.03 1.62-.42 2.14-1.08.53-.67.76-1.54.61-2.4-.24-1.39-1.24-2.51-2.58-2.93-.92-.29-1.93-.2-2.76.23V3c0-.41-.34-.75-.75-.75zM12 7.75c.97 0 1.75.78 1.75 1.75s-.78 1.75-1.75 1.75S10.25 10.47 10.25 9.5 11.03 7.75 12 7.75z"/></svg>
+                    <svg class="nav-icon-svg" viewBox="0 0 661.48 661.48" data-icon="scout"></svg>
                 </div>
                 <span class="text-[10px] font-bold" data-i18n="nav_woggle">Woggle</span>
             </button>
@@ -196,7 +199,21 @@
                 <!-- Receiver details (also printed in the receipt and the PDF) -->
                 <div class="space-y-2">
                     <h4 class="text-[11px] font-bold text-gray-500 uppercase" data-i18n="cart_receiver_title">Receiver Details</h4>
-                    <input type="text" id="receiver-name" data-receiver="name" autocomplete="name" placeholder="Receiver Name" data-i18n-placeholder="cart_receiver_name" class="w-full px-3 py-2 border rounded-xl text-base">
+                    <div class="flex gap-2">
+                        <input type="text" id="receiver-name" data-receiver="name" autocomplete="off" placeholder="Receiver Name" data-i18n-placeholder="cart_receiver_name" class="flex-1 min-w-0 px-3 py-2 border rounded-xl text-base">
+                        <!-- Opens the list of saved customers / carts -->
+                        <button type="button" id="saved-toggle-btn" data-action="toggle-saved" aria-label="Saved orders" class="relative shrink-0 w-12 border rounded-xl bg-white text-[#7414DC] flex items-center justify-center active:scale-95 transition-all">
+                            <i class="fa-solid fa-clipboard-list"></i>
+                            <span id="saved-count-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-[#F4A81E] text-gray-900 font-black text-[10px] rounded-full items-center justify-center border-2 border-white">0</span>
+                        </button>
+                    </div>
+                    <div id="saved-panel" class="hidden rounded-2xl border border-purple-100 bg-purple-50/60 p-3 space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                            <p class="text-[11px] font-bold text-purple-900 uppercase" data-i18n="saved_title">Saved orders</p>
+                            <button type="button" id="save-order-btn" data-action="save-order" class="px-3 py-1.5 bg-[#7414DC] text-white text-[11px] font-bold rounded-lg flex items-center gap-1.5 active:scale-95" style="min-height:0"><i class="fa-solid fa-floppy-disk"></i><span data-i18n="saved_save">Save current</span></button>
+                        </div>
+                        <div id="saved-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
+                    </div>
                     <input type="tel" id="receiver-phone" data-receiver="phone" inputmode="tel" autocomplete="tel" placeholder="Receiver Phone Number" data-i18n-placeholder="cart_receiver_phone" class="w-full px-3 py-2 border rounded-xl text-base">
                     <textarea id="receiver-address" data-receiver="address" rows="2" autocomplete="street-address" placeholder="Receiver Address" data-i18n-placeholder="cart_receiver_address" class="w-full px-3 py-2 border rounded-xl text-base"></textarea>
                     <p class="text-[11px] font-bold text-gray-500 uppercase pt-1" data-i18n="cart_delivery_title">Delivery Method</p>

@@ -32,15 +32,25 @@ import {
 } from './cart.js';
 
 import { createReceiptPdf } from './pdf.js';
+import {
+    listSaved,
+    saveCurrentOrder,
+    loadSavedOrder,
+    deleteSavedOrder,
+    summarizeSaved,
+    hasUnsavedItems,
+    sameName
+} from './saved-orders.js';
 
 import { formatPrice } from './currency.js';
 import { DELIVERY } from '../data/catalog.js';
+import { SCOUT_LOGO_PATHS, SCOUT_VIEWBOX } from './icons.js';
 import { t, setLang, productName, optionLabel, optionTitleKey, applyStaticTranslations } from './i18n.js';
 import { NEWS } from '../data/news.js';
 
 // SVG Definitions for icons
 const SVG_ICONS = {
-    woggle: `<svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M12.75 2.25c-.41 0-.75.34-.75.75v3.19c-.83-.43-1.84-.52-2.76-.23-1.34.42-2.34 1.54-2.58 2.93-.15.86.08 1.73.61 2.4.52.66 1.3 1.05 2.14 1.08.38.01.76-.06 1.12-.2.4.67 1.03 1.18 1.77 1.43v.8c-1.32.18-2.55.77-3.5 1.68C7.45 17.41 6.5 19.38 6.5 21.5c0 .41.34.75.75.75s.75-.34.75-.75c0-1.74.78-3.32 2.06-4.38.9-.74 2.04-1.17 3.19-1.22 1.15.05 2.29.48 3.19 1.22 1.28 1.06 2.06 2.64 2.06 4.38 0 .41.34.75.75.75s.75-.34.75-.75c0-2.12-.95-4.09-2.8-5.42-.95-.91-2.18-1.5-3.5-1.68v-.8c.74-.25 1.37-.76 1.77-1.43.36.14.74.21 1.12.2.84-.03 1.62-.42 2.14-1.08.53-.67.76-1.54.61-2.4-.24-1.39-1.24-2.51-2.58-2.93-.92-.29-1.93-.2-2.76.23V3c0-.41-.34-.75-.75-.75zM12 7.75c.97 0 1.75.78 1.75 1.75s-.78 1.75-1.75 1.75S10.25 10.47 10.25 9.5 11.03 7.75 12 7.75z"/></svg>`,
+    woggle: `<svg class="w-8 h-8 fill-current" viewBox="${SCOUT_VIEWBOX}">${SCOUT_LOGO_PATHS}</svg>`,
     pin: `<svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M12 2C8.7 2 6 4.7 6 8C6 11.5 9 14.5 11 16.2V21C11 21.6 11.4 22 12 22C12.6 22 13 21.6 13 21V16.2C15 14.5 18 11.5 18 8C18 4.7 15.3 2 12 2ZM12 14.2C10.3 12.7 8 10.3 8 8C8 5.8 9.8 4 12 4C14.2 4 16 5.8 16 8C16 10.3 13.7 12.7 12 14.2ZM12 6C10.9 6 10 6.9 10 8C10 9.1 10.9 10 12 10C13.1 10 14 9.1 14 8C14 6.9 13.1 6 12 6Z"/></svg>`
 };
 
@@ -88,7 +98,7 @@ function renderGrid(containerId, allProducts, query = '') {
                 <div class="w-full h-full flex items-center justify-center" style="display: none;">
                     ${fallbackElement}
                 </div>
-                ${p.isCustom ? `<span class="absolute top-2 left-2 px-2 py-0.5 bg-[#F4A81E] text-gray-900 font-black text-[9px] rounded-full uppercase tracking-wider shadow-sm z-10">${escapeHTML(t('tag_custom'))}</span>` : ''}
+                ${p.isCustom ? `<span class="absolute top-2 left-2 px-4 py-1.5 bg-[#F4A81E] text-gray-900 font-black text-[11px] rounded-full uppercase tracking-wider shadow-sm z-10">${escapeHTML(t('tag_custom'))}</span>` : ''}
             </div>
 
             <div class="flex items-end justify-between gap-1">
@@ -214,6 +224,7 @@ function refreshPrices() {
     renderNews();
     updateCartStateUI();
     renderDelivery();
+    renderSavedList();
     updateModalPrice();
     refreshModalText();
 }
@@ -433,6 +444,51 @@ function downloadBlob(blob, filename) {
     setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
+// ---------- Saved orders (customers and their carts) ----------
+function formatSavedDate(timestamp) {
+    try {
+        return new Date(timestamp).toLocaleString(currentLang === 'kh' ? 'km-KH' : 'en-GB',
+            { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+        return '';
+    }
+}
+
+function renderSavedList() {
+    const saved = listSaved();
+
+    const badge = document.getElementById('saved-count-badge');
+    if (badge) {
+        badge.innerText = saved.length;
+        badge.classList.toggle('hidden', saved.length === 0);
+        badge.classList.toggle('flex', saved.length > 0);
+    }
+
+    const list = document.getElementById('saved-list');
+    if (!list) return;
+
+    if (saved.length === 0) {
+        list.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-3">${escapeHTML(t('saved_empty'))}</p>`;
+        return;
+    }
+
+    const currentName = getReceiver().name;
+    list.innerHTML = saved.map(entry => {
+        const { count, total } = summarizeSaved(entry);
+        const active = currentName.trim() && sameName(entry.name, currentName);
+        return `
+        <div class="flex items-center gap-2 rounded-xl border p-2 ${active ? 'bg-white border-[#7414DC]' : 'bg-white border-gray-200'}">
+            <button type="button" data-action="load-order" data-id="${entry.id}" class="flex-1 min-w-0 text-left active:opacity-70" style="min-height:0">
+                <p class="font-bold text-xs text-gray-900 truncate">${escapeHTML(entry.name)}</p>
+                <p class="text-[10px] text-gray-500 truncate">${escapeHTML(t('saved_items', { count }))} • ${formatPrice(total)} • ${escapeHTML(formatSavedDate(entry.savedAt))}</p>
+            </button>
+            <button type="button" data-action="delete-order" data-id="${entry.id}" aria-label="Delete" class="w-9 h-9 shrink-0 text-rose-600 hover:bg-rose-100 rounded-lg flex items-center justify-center" style="min-height:0">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+        </div>`;
+    }).join('');
+}
+
 // ---------- Cart ----------
 export function updateCartStateUI() {
     const cart = getCart();
@@ -520,10 +576,17 @@ export function showToast(msg) {
 
 // ---------- Setup ----------
 window.addEventListener('DOMContentLoaded', () => {
+    // Scout logo for every <svg data-icon="scout"> (bottom menu)
+    document.querySelectorAll('svg[data-icon="scout"]').forEach(svg => {
+        svg.setAttribute('viewBox', SCOUT_VIEWBOX);
+        svg.innerHTML = SCOUT_LOGO_PATHS;
+    });
+
     setLang(currentLang);
     applyStaticTranslations();
     loadCartFromStorage();
     fillReceiverForm();
+    renderSavedList();
     renderAllGrids();
     renderNews();
     updateCartStateUI();
@@ -559,6 +622,36 @@ window.addEventListener('DOMContentLoaded', () => {
             if (input) { input.value = ''; input.focus(); }
             renderSection(section);
             updateClearButton(section);
+        } else if (action === 'toggle-saved') {
+            document.getElementById('saved-panel')?.classList.toggle('hidden');
+            renderSavedList();
+        } else if (action === 'save-order') {
+            const result = saveCurrentOrder();
+            if (!result.ok) {
+                showToast(t('toast_need_name'));
+                document.getElementById('receiver-name')?.focus();
+            } else {
+                renderSavedList();
+                showToast(t(result.updated ? 'toast_saved_updated' : 'toast_saved'));
+            }
+        } else if (action === 'load-order') {
+            const entry = listSaved().find(e => e.id === target.getAttribute('data-id'));
+            if (!entry) return;
+            if (hasUnsavedItems() && !confirm(t('confirm_replace_cart', { name: entry.name }))) return;
+            loadSavedOrder(entry.id);
+            fillReceiverForm();
+            updateCartStateUI();
+            renderSavedList();
+            const scroller = document.querySelector('#cart-modal .overflow-y-auto');
+            if (scroller) scroller.scrollTop = 0;
+            showToast(t('toast_loaded', { name: entry.name }));
+        } else if (action === 'delete-order') {
+            const entry = listSaved().find(e => e.id === target.getAttribute('data-id'));
+            if (!entry) return;
+            if (!confirm(t('confirm_delete_saved', { name: entry.name }))) return;
+            deleteSavedOrder(entry.id);
+            renderSavedList();
+            showToast(t('toast_deleted'));
         } else if (action === 'select-delivery') {
             setDeliveryMethod(target.getAttribute('data-value'));
             renderDelivery();
@@ -590,6 +683,7 @@ window.addEventListener('DOMContentLoaded', () => {
         if (!field) return;
         setReceiverField(field.getAttribute('data-receiver'), field.value);
         refreshReceiptText();
+        if (field.getAttribute('data-receiver') === 'name') renderSavedList();
     });
 
     // Close customizer when tapping the dark backdrop

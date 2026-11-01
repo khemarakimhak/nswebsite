@@ -142,7 +142,7 @@ const REDCROSS_COLORS = ["Normal Red Cross", "Wood White", "Wood Brown"];
 //     red-cross-wood-white.jpg     (style name lowercase, spaces become "-")
 //  If a color picture is missing, the style picture is used instead.
 export const WOGGLE_STYLES = [
-    { name: "Scout",     nameKh: "ស្ក៊ូត",          image: "woggle-scout.jpg",    normalImage: "normal-woggle-scout.jpg",    colors: STANDARD_COLORS },
+    { name: "Lis",       nameKh: "ផ្កាលីស",          image: "woggle-lis.jpg",    normalImage: "normal-woggle-lis.jpg",    colors: STANDARD_COLORS },
     { name: "Romdoul",   nameKh: "រំដួល",           image: "woggle-romdoul.jpg",  normalImage: "normal-woggle-romdoul.jpg",  colors: STANDARD_COLORS },
     { name: "Angkor",    nameKh: "អង្គរ",           image: "woggle-angkor.jpg",   normalImage: "normal-woggle-angkor.jpg",   colors: STANDARD_COLORS },
     { name: "Red Cross", nameKh: "កាកបាទក្រហម",    image: "woggle-redcross.jpg", normalImage: "normal-woggle-redcross.jpg", colors: REDCROSS_COLORS },

@@ -54,7 +54,7 @@ export const TRANSLATIONS = {
     section_empty:       { en: "No items yet.",                         kh: "មិនទាន់មានទំនិញទេ។" },
 
     // ----- Product cards -----
-    tag_custom:          { en: "Custom",                                kh: "កងឈ្មោះកុម្មង់" },
+    tag_custom:          { en: "Customize Name",                        kh: "កងឈ្មោះកុម្មង់" },
     // Names of the automatic woggle cards. {style} = Scout / Romdoul / Angkor / Red Cross
     woggle_name_title:   { en: "{style} Woggle Name",                   kh: "កងឈ្មោះ {style}" },
     woggle_normal_title: { en: "Normal {style} Woggle",                 kh: "កង {style} ធម្មតា" },
@@ -94,6 +94,19 @@ export const TRANSLATIONS = {
     delivery_choose_fee:   { en: "Please choose a delivery fee",        kh: "សូមជ្រើសរើសតម្លៃដឹកជូន" },
     // Line added to the cart, receipt and PDF when the delivery costs money: "Delivery fee (VET)"
     delivery_fee_label:    { en: "Delivery fee",                        kh: "ថ្លៃដឹកជញ្ជូន" },
+
+    // ----- Saved orders (customers and their carts, kept on this phone) -----
+    saved_title:           { en: "Saved orders",                        kh: "ការបញ្ជាទិញដែលបានរក្សាទុក" },
+    saved_save:            { en: "Save current",                        kh: "រក្សាទុក" },
+    saved_empty:           { en: "No saved orders yet.",                kh: "មិនទាន់មានការបញ្ជាទិញដែលបានរក្សាទុកទេ។" },
+    saved_items:           { en: "{count} items",                       kh: "{count} មុខ" },
+    toast_saved:           { en: "Order saved!",                        kh: "បានរក្សាទុក!" },
+    toast_saved_updated:   { en: "Saved order updated!",                kh: "បានធ្វើបច្ចុប្បន្នភាព!" },
+    toast_need_name:       { en: "Enter the receiver name first",       kh: "សូមបញ្ចូលឈ្មោះអ្នកទទួលជាមុនសិន" },
+    toast_loaded:          { en: "Loaded: {name}",                      kh: "បានបើក៖ {name}" },
+    toast_deleted:         { en: "Saved order deleted",                 kh: "បានលុបការបញ្ជាទិញ" },
+    confirm_replace_cart:  { en: "The cart has items that are not saved. Replace them with the order of {name}?", kh: "ក្នុងកន្ត្រកមានទំនិញដែលមិនទាន់រក្សាទុក។ ជំនួសដោយការបញ្ជាទិញរបស់ {name}?" },
+    confirm_delete_saved:  { en: "Delete the saved order of {name}?",   kh: "លុបការបញ្ជាទិញរបស់ {name}?" },
 
     // ----- Small pop-up messages -----
     toast_added:         { en: "Item added to cart!",                   kh: "ទំនិញបានដាក់ចូលកន្ត្រកទំនិញ!" },
