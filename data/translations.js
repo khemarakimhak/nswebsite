@@ -36,7 +36,7 @@ export const TRANSLATIONS = {
     home_empty:          { en: "No updates yet.",                       kh: "មិនមានព័ត៌មានថ្មីទេ" },
 
     // ----- Section headings -----
-    woggle_title:        { en: "Scout Woggles Collection",              kh: "ម៉ូតផ្សេងៗនៃកងកន្សែង" },
+    woggle_title:        { en: "Scout Woggles Collection",              kh: "កងកន្សែង" },
     woggle_subtitle:     { en: "Normal & Custom Woggles",               kh: "កងធម្មតា និងកងដាក់ឈ្មោះ" },
     shop_title:          { en: "General Scout Gear",                    kh: "សម្ភារៈកាយរឹទ្ធិទូទៅ" },
     shop_subtitle:       { en: "Standard Accessories",                  kh: "គ្រឿងប្រើប្រាស់ទូទៅ" },
@@ -123,7 +123,7 @@ export const TRANSLATIONS = {
     receipt_title:       { en: "📋 CUSTOMER ORDER SUMMARY (@nimet_giftshop)", kh: "📋 សេចក្តីសង្ខេបការបញ្ជាទិញ (Telegram @nimet_giftshop)" },
     receipt_empty:       { en: "Cart is empty.",                        kh: "កន្ត្រកទទេ។" },
     receipt_name:        { en: "[Name: {name}]",                        kh: "[ឈ្មោះ: {name}]" },
-    receipt_total:       { en: "💵 Total Due: {total}",                 kh: "💵 សរុបត្រូវបង់: {total}" },
+    receipt_total:       { en: "💵 Total Due: {total}",                 kh: "💵 តម្លៃសរុប: {total}" },
     receipt_thanks:      { en: "Thank you for ordering with Nimet Scout Shop!", kh: "អរគុណដែលបានបញ្ជាទិញជាមួយហាងនិម្មិត" },
     // Receiver lines at the top of the copied receipt
     receipt_receiver:    { en: "Receiver",                              kh: "អ្នកទទួល" },

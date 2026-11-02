@@ -67,10 +67,11 @@ export const SHOP_ITEMS = [
     { name: "Custom Cap",     nameKh: "មួកតាមបំណង",     price: 10.00, image: "cap.jpg"      },
 
     // TODO: scarf prices below are placeholders. Change them to your real prices.
-    { name: "Purple Scarf",  nameKh: "កន្សែង",          price: 5.00, image: "purple-scarf.jpg"  },
+    { name: "Redcross Scarf",  nameKh: "កន្សែងកាកបាទ",          price: 5.00, image: "redcross-scarf.jpg"  },
+    { name: "Purple Scarf",  nameKh: "កន្សែងស្វាយ",          price: 5.00, image: "purple-scarf.jpg"  },
     { name: "Red Scarf",     nameKh: "កន្សែងក្រហម",     price: 5.00, image: "red-scarf.jpg"     },
     { name: "Green Scarf",   nameKh: "កន្សែងបៃតង",      price: 5.00, image: "green-scarf.jpg"   },
-    { name: "Yellow Scarf",  nameKh: "កន្សេងលឿង",       price: 5.00, image: "yellow-scarf.jpg"  },
+    { name: "Yellow Scarf",  nameKh: "កន្សែងលឿង",       price: 5.00, image: "yellow-scarf.jpg"  },
     { name: "3 Color Scarf", nameKh: "កន្សែង ៣ឆ្នូត",    price: 5.00, image: "3-color-scarf.jpg" },
 ];
 
@@ -79,7 +80,7 @@ export const SHOP_ITEMS = [
 //  SECTION: PIN
 // ---------------------------------------------------------------------
 export const PIN_ITEMS = [
-    { name: "National Scout Pin", nameKh: "ម្ជុលស្ក៊ូតជាតិ",           price: 2.50, image: "pin-national.jpg"  },
+    { name: "Scout wing Pin",     nameKh: "កន្លាស់ស្ទាំង ស្កោត",           price: 3, image: "pin-scout-wing.jpg"  },
     { name: "Wood Badge Pin",     nameKh: "ម្ជុលវូដបាដ្ជ",              price: 4.00, image: "pin-woodbadge.jpg" },
     { name: "Scout Promise Pin",  nameKh: "ម្ជុលសេចក្តីសន្យាស្ក៊ូត",   price: 3.00, image: "pin-promise.jpg"   },
 ];
@@ -93,7 +94,6 @@ export const BADGE_ITEMS = [
     { name: "First Aid Badge",  nameKh: "ផ្លាកសង្គ្រោះបឋម",     price: 2.50, image: "badge-firstaid.jpg"   },
     { name: "Campcraft Badge",  nameKh: "ផ្លាកជំនាញបោះជំរំ",   price: 2.50, image: "badge-campcraft.jpg"  },
 
-    // TODO: Rank Badge price is a placeholder. Change it to your real price.
     { name: "Rank Badge", nameKh: "ប័ណ្ឌវឌ្ឍនកម្ម", price: 2.00, image: "rank-badge.jpg", optionsTitle: "class",
       options: ["Beginner Class", "2nd Class", "3rd Class", "Star Class", "Courageous Class", "Angkor Class"] },
 ];

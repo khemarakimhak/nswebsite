@@ -259,7 +259,7 @@ export function generateFormattedReceipt() {
     lines.push("");
 
     getReceiptItems().forEach(r => {
-        lines.push(`• ${r.label}: ${r.qty}x @ ${formatPrice(r.unit)} = ${formatPrice(r.subtotal)}`);
+        lines.push(`• ${r.label}: ${r.qty}x ${formatPrice(r.unit)} = ${formatPrice(r.subtotal)}`);
     });
 
     const feeRow = getDeliveryRow();
