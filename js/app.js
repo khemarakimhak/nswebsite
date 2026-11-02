@@ -168,14 +168,13 @@ function renderNews() {
 
         let mediaHTML = '';
 
-        // 1. YouTube Video Preview with Press-to-Play
+        // 1. YouTube Video Preview with Reliable Event Handling
         if (youtubeId) {
             const thumbUrl = `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
             mediaHTML = `
-            <div class="relative w-full aspect-video bg-black cursor-pointer group overflow-hidden"
-                 onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/${youtubeId}?autoplay=1\' class=\'w-full h-full border-0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
+            <div class="yt-video-container relative w-full aspect-video bg-black cursor-pointer group overflow-hidden" data-yt-id="${youtubeId}">
                 <img src="${thumbUrl}" alt="${title}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                <div class="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/20 transition-colors">
+                <div class="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/20 transition-colors pointer-events-none">
                     <div class="w-12 h-12 rounded-full bg-[#F4A81E] text-slate-900 flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
                         <i class="fa-solid fa-play text-lg ml-0.5"></i>
                     </div>
@@ -197,6 +196,16 @@ function renderNews() {
             </div>
         </article>`;
     }).join('');
+
+    // Attach click handlers to YouTube elements cleanly
+    container.querySelectorAll('.yt-video-container').forEach(card => {
+        card.addEventListener('click', function() {
+            const ytId = this.getAttribute('data-yt-id');
+            if (ytId) {
+                this.innerHTML = `<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1" class="w-full h-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            }
+        });
+    });
 }
 
 // ---------- Tabs ----------
