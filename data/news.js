@@ -18,18 +18,16 @@ export const NEWS = [
     {
         date: "",
         title: "How to order using Nimet Scout Shop website",
-        text: "Watch this short guide on placing custom woggle orders.",
+        text: "",
         image: "",
-        youtubeId: "gRcCgDYTLpE&t=5s", // Paste YouTube Video ID here
         titleKh: "របៀបកុម្មង់តាមវេបសាយនិម្មិតស្កោតសប",
-        textKh: "ទស្សនាវីដេអូណែនាំខ្លីៗពីរបៀបកុម្មង់កន្លាស់ស្កោត។",
+        textKh: "",
     },
     {
         date: "",
         title: "Welcome to Nimet Scout Shop",
-        text: "Order custom woggles with your name, plus pins, badges and more.",
+        text: "Order custom woggles with your name, plus pins, badges and more. Add items to your cart and copy the receipt to send us your order.",
         image: "",
-        youtubeId: "", // Leave blank if using image or text-only
         titleKh: "",
         textKh: "",
     },

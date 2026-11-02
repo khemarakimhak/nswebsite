@@ -67,18 +67,16 @@ export const DELIVERY = {
 //  SECTION: SHOP
 // ---------------------------------------------------------------------
 export const SHOP_ITEMS = [
-    { name: "Custom T-Shirt", nameKh: "អាវយឺតតាមបំណង", price: 15.00, image: "tshirt.jpg"   },
-    { name: "Scout Keychain", nameKh: "ខ្សែសោស្ក៊ូត",   price: 3.50,  image: "keychain.jpg" },
-    { name: "Coffee Mug",     nameKh: "កែវកាហ្វេ",       price: 12.00, image: "mug.jpg"      },
-    { name: "Custom Cap",     nameKh: "មួកតាមបំណង",     price: 10.00, image: "cap.jpg"      },
+    { name: "Leather Cambodia Scout", nameKh: "ផ្លាកស្បែក កាយរឹទ្ធិជាតិ", price: 2.50, image: "leather-cambodia-scout.jpg"   },
+    { name: "Leather World Scout", nameKh: "ផ្លាកស្បែក World Scout",   price: 2.50,  image: "leather-world-scout.jpg" },
 
-    // TODO: scarf prices below are placeholders. Change them to your real prices.
-    { name: "Redcross Scarf",  nameKh: "កន្សែងកាកបាទ",          price: 5.00, image: "redcross-scarf.jpg"  },
-    { name: "Purple Scarf",  nameKh: "កន្សែងស្វាយ",          price: 5.00, image: "purple-scarf.jpg"  },
-    { name: "Red Scarf",     nameKh: "កន្សែងក្រហម",     price: 5.00, image: "red-scarf.jpg"     },
-    { name: "Green Scarf",   nameKh: "កន្សែងបៃតង",      price: 5.00, image: "green-scarf.jpg"   },
-    { name: "Yellow Scarf",  nameKh: "កន្សែងលឿង",       price: 5.00, image: "yellow-scarf.jpg"  },
-    { name: "3 Color Scarf", nameKh: "កន្សែង ៣ឆ្នូត",    price: 5.00, image: "3-color-scarf.jpg" },
+    //scarf
+    { name: "Redcross Scarf",  nameKh: "កន្សែងកាកបាទ",          price: 5.50, image: "redcross-scarf.jpg"  },
+    { name: "Purple Scarf",  nameKh: "កន្សែងស្វាយ",          price: 5.50, image: "purple-scarf.jpg"  },
+    { name: "Red Scarf",     nameKh: "កន្សែងក្រហម",     price: 5.50, image: "red-scarf.jpg"     },
+    { name: "Green Scarf",   nameKh: "កន្សែងបៃតង",      price: 5.50, image: "green-scarf.jpg"   },
+    { name: "Yellow Scarf",  nameKh: "កន្សែងលឿង",       price: 5.50, image: "yellow-scarf.jpg"  },
+    { name: "3 Color Scarf", nameKh: "កន្សែង ៣ឆ្នូត",    price: 7.50, image: "3-color-scarf.jpg" },
 ];
 
 
@@ -86,9 +84,7 @@ export const SHOP_ITEMS = [
 //  SECTION: PIN
 // ---------------------------------------------------------------------
 export const PIN_ITEMS = [
-    { name: "Scout wing Pin",     nameKh: "កន្លាស់ស្ទាំង ស្កោត",           price: 3, image: "pin-scout-wing.jpg"  },
-    { name: "Wood Badge Pin",     nameKh: "ម្ជុលវូដបាដ្ជ",              price: 4.00, image: "pin-woodbadge.jpg" },
-    { name: "Scout Promise Pin",  nameKh: "ម្ជុលសេចក្តីសន្យាស្ក៊ូត",   price: 3.00, image: "pin-promise.jpg"   },
+    { name: "Scout wing Pin",     nameKh: "កន្លាស់ស្ទាំង ស្កោត",           price: 3.00, image: "pin-scout-wing.jpg"  },
 ];
 
 
@@ -96,12 +92,23 @@ export const PIN_ITEMS = [
 //  SECTION: BADGE
 // ---------------------------------------------------------------------
 export const BADGE_ITEMS = [
-    { name: "Membership Badge", nameKh: "ផ្លាកសមាជិក",           price: 2.00, image: "badge-membership.jpg" },
-    { name: "First Aid Badge",  nameKh: "ផ្លាកសង្គ្រោះបឋម",     price: 2.50, image: "badge-firstaid.jpg"   },
-    { name: "Campcraft Badge",  nameKh: "ផ្លាកជំនាញបោះជំរំ",   price: 2.50, image: "badge-campcraft.jpg"  },
-
     { name: "Rank Badge", nameKh: "ប័ណ្ឌវឌ្ឍនកម្ម", price: 2.00, image: "rank-badge.jpg", optionsTitle: "class",
-      options: ["Beginner Class", "2nd Class", "3rd Class", "Star Class", "Courageous Class", "Angkor Class"] },
+    options: ["Beginner Class", "2nd Class", "3rd Class", "Star Class", "Courageous Class", "Angkor Class"] },
+    
+    { name: "One Scout Badge", nameKh: "គ្រឿង​ឥស្សរិយយយ (មួយ)", price: 1.25, image: "one-scout-badge.jpg", optionsTitle: "badge",
+    options: ["Cambodia", "World Scout round", "Flag Badge", "Cambodia Scout Round", "Cambodia Scout rectangle", "Triangle", "Province"] },
+
+    { name: "Scout badge set 1", nameKh: "បេជមួយឈុត ខេត្ត",               price: 6.50, image: "scout-badge-set-1.jpg" },
+    { name: "Scout Badge set 2", nameKh: "បេជមួយឈុត កជក",               price: 6.50, image: "scout-badge-set-2.jpg" },
+    { name: "Jota Joti 2026 badge", nameKh: "បេជ Jota Joti 2026",    price: 2.00, image: "jota-joti-2026.jpg" },
+    { name: "Jota Joti 2025 badge", nameKh: "បេជ Jota Joti 2025",    price: 2.00, image: "jota-joti-2025.jpg" },
+    { name: "World Scout badge small", nameKh: "បេជ World scout តូច", price: 2.00, image: "world-scout-small.jpg" },
+    //{ name: "World Scout badge big", nameKh: "បេជ World scout ធំ",  price: 2.50, image: "world-scout-big.jpg" },
+    { name: "SfH badge small", nameKh: "បេជ SfH តូច",                 price: 1.50, image: "sfh-small.jpg" },
+    { name: "SfH badge Big", nameKh: "បេជ SfH ធំ",                    price: 2.00, image: "sfh-big.jpg" },
+    { name: "Founder Day Badge", nameKh: "បេជ Founder Day",          price: 2.00, image: "founder-day.jpg" },
+    { name: "MOP Badge", nameKh: "បេជ អ្នកនាំសារសន្តិភាព",                 price: 1.75, image: "mop-badge.jpg" },
+    { name: "First Aid Badge",  nameKh: "បេជសង្គ្រោះបឋម",               price: 1.25, image: "badge-firstaid.jpg" },
 ];
 
 

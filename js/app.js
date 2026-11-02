@@ -164,48 +164,17 @@ function renderNews() {
         const title = escapeHTML((useKh && post.titleKh) || post.title || '');
         const text = escapeHTML((useKh && post.textKh) || post.text || '');
         const img = post.image ? imgPath(post.image, 'news') : '';
-        const youtubeId = post.youtubeId ? String(post.youtubeId).trim() : '';
-
-        let mediaHTML = '';
-
-        // 1. YouTube Video Preview with Reliable Event Handling
-        if (youtubeId) {
-            const thumbUrl = `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
-            mediaHTML = `
-            <div class="yt-video-container relative w-full aspect-video bg-black cursor-pointer group overflow-hidden" data-yt-id="${youtubeId}">
-                <img src="${thumbUrl}" alt="${title}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                <div class="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/20 transition-colors pointer-events-none">
-                    <div class="w-12 h-12 rounded-full bg-[#F4A81E] text-slate-900 flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-                        <i class="fa-solid fa-play text-lg ml-0.5"></i>
-                    </div>
-                </div>
-            </div>`;
-        } 
-        // 2. Standard Image Fallback
-        else if (img) {
-            mediaHTML = `<img src="${img}" alt="${title}" loading="lazy" class="w-full aspect-video object-cover" onerror="this.style.display='none'" />`;
-        }
 
         return `
-        <article class="bg-white rounded-3xl border border-purple-100 shadow-sm overflow-hidden mb-4">
-            ${mediaHTML}
+        <article class="bg-white rounded-3xl border border-purple-100 shadow-sm overflow-hidden">
+            ${img ? `<img src="${img}" alt="${title}" loading="lazy" class="w-full aspect-video object-cover" onerror="this.style.display='none'" />` : ''}
             <div class="p-4">
-                ${post.date ? `<p class="text-[10px] font-bold text-[#7414DC] uppercase tracking-wider mb-1">${escapeHTML(formatNewsDate(post.date))}</p>` : ''}
-                ${title ? `<h3 class="font-black text-sm text-gray-900 leading-snug mb-1">${title}</h3>` : ''}
-                ${text ? `<p class="text-xs text-gray-600 leading-relaxed whitespace-pre-line">${text}</p>` : ''}
+                <p class="text-[10px] font-bold text-[#7414DC] uppercase tracking-wider mb-1">${escapeHTML(formatNewsDate(post.date))}</p>
+                <h3 class="font-black text-sm text-gray-900 leading-snug mb-1">${title}</h3>
+                <p class="text-xs text-gray-600 leading-relaxed whitespace-pre-line">${text}</p>
             </div>
         </article>`;
     }).join('');
-
-    // Attach click handlers to YouTube elements cleanly
-    container.querySelectorAll('.yt-video-container').forEach(card => {
-        card.addEventListener('click', function() {
-            const ytId = this.getAttribute('data-yt-id');
-            if (ytId) {
-                this.innerHTML = `<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1" class="w-full h-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-            }
-        });
-    });
 }
 
 // ---------- Tabs ----------
