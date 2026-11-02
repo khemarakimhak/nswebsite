@@ -15,7 +15,7 @@ export function inLang(forcedLang, fn) {
     try { return fn(); } finally { lang = previous; }
 }
 
-// t('toast_added') or t('woggle_name_title', { style: 'Scout' })
+// t('toast_cleared') or t('woggle_name_title', { style: 'Scout' })
 export function t(key, vars = {}) {
     const entry = TRANSLATIONS[key];
     let text = key; // if a key is missing, show the key so it is easy to spot

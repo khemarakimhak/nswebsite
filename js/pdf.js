@@ -4,7 +4,7 @@
 // there, then the picture is wrapped in a one-page PDF. No library needed.
 // The PDF is ALWAYS in Khmer (and riel), whatever language the website is showing.
 
-import { getReceiptItems, getCartTotal, getDeliveryRow, getReceiver, deliveryLabel } from './cart.js';
+import { getReceiptItems, getCartTotal, getDeliveryRow, getReceiver, receiverDisplayName, receiverDeliveryText } from './cart.js';
 import { formatPrice } from './currency.js';
 import { t, inLang } from './i18n.js';
 import { SETTINGS } from '../data/catalog.js';
@@ -25,12 +25,12 @@ export function buildReceiptModel() {
     return inLang('kh', () => ({
         title: inLang('en', () => t('app_name')),      // top line: Nimet Scout Shop
         shopKh: t('app_name'),                          // second line: Khmer shop name
-        receiverName: dash(receiver.name),
+        receiverName: receiverDisplayName(),
         info: [
             [t('pdf_sender_phone'), SETTINGS.SENDER_PHONE],
             [t('pdf_receiver_phone'), dash(receiver.phone)],
             [t('pdf_address'), dash(receiver.address)],
-            [t('pdf_delivery'), dash(deliveryLabel(receiver.delivery))]
+            [t('pdf_delivery'), dash(receiverDeliveryText())]
         ],
         items: getReceiptItems().map(r => ({
             label: r.label,
@@ -77,36 +77,42 @@ function wrapText(ctx, text, maxWidth) {
 }
 
 // ---------- 3. Layout + drawing ----------
-function drawReceipt(model) {
+// Every size below is in "design units" (1 unit = 1 px of the 300 dpi PDF page).
+// outWidth / widthUnits scales the whole design, so the same receipt can also be drawn
+// narrower (for example 384 dots wide for the thermal printer) with proportionally smaller text.
+export function drawReceipt(model, { outWidth = WIDTH_PX, widthUnits = WIDTH_PX, padUnits = PAD } = {}) {
+    const S = outWidth / widthUnits;
+    const pad = padUnits * S;
+    const contentW = (widthUnits - padUnits * 2) * S;
+
     const probe = document.createElement('canvas').getContext('2d');
     const ops = [];
-    let y = PAD;
+    let y = pad;
 
-    const fontOf = (size, bold) => `${bold ? 'bold ' : ''}${size}px ${FONT}`;
+    const fontOf = (size, bold) => `${bold ? 'bold ' : ''}${size * S}px ${FONT}`;
 
     // One text block (wrapped). align: 'center' | 'left' | 'right'
     function text(str, size, { bold = false, align = 'left', gap = 0 } = {}) {
         probe.font = fontOf(size, bold);
-        const lines = wrapText(probe, str, CONTENT_W);
+        const lines = wrapText(probe, str, contentW);
         lines.forEach(line => {
-            ops.push({ kind: 'text', str: line, font: fontOf(size, bold), align, y: y + size * 1.15 });
-            y += size * LINE_HEIGHT;
+            ops.push({ kind: 'text', str: line, font: fontOf(size, bold), align, y: y + size * S * 1.15 });
+            y += size * S * LINE_HEIGHT;
         });
-        y += gap;
+        y += gap * S;
     }
 
     // A row with text on the left and text on the right (same baseline)
     function row(left, right, size, bold = false) {
-        probe.font = fontOf(size, bold);
-        ops.push({ kind: 'text', str: left, font: fontOf(size, bold), align: 'left', y: y + size * 1.15 });
-        ops.push({ kind: 'text', str: right, font: fontOf(size, bold), align: 'right', y: y + size * 1.15 });
-        y += size * LINE_HEIGHT;
+        ops.push({ kind: 'text', str: left, font: fontOf(size, bold), align: 'left', y: y + size * S * 1.15 });
+        ops.push({ kind: 'text', str: right, font: fontOf(size, bold), align: 'right', y: y + size * S * 1.15 });
+        y += size * S * LINE_HEIGHT;
     }
 
     function line(dashed = false, gap = 10) {
-        y += gap;
+        y += gap * S;
         ops.push({ kind: 'line', y, dashed });
-        y += gap + 2;
+        y += (gap + 2) * S;
     }
 
     // Header
@@ -128,47 +134,46 @@ function drawReceipt(model) {
     // Delivery fee (only when it costs money)
     if (model.fee) {
         probe.font = fontOf(28, false);
-        const feeLines = wrapText(probe, model.fee.label, CONTENT_W - 170);
+        const feeLines = wrapText(probe, model.fee.label, contentW - 170 * S);
         feeLines.forEach((txt, i) => {
-            ops.push({ kind: 'text', str: txt, font: fontOf(28, false), align: 'left', y: y + 28 * 1.15 });
-            if (i === 0) ops.push({ kind: 'text', str: model.fee.amount, font: fontOf(28, false), align: 'right', y: y + 28 * 1.15 });
-            y += 28 * LINE_HEIGHT;
+            ops.push({ kind: 'text', str: txt, font: fontOf(28, false), align: 'left', y: y + 28 * S * 1.15 });
+            if (i === 0) ops.push({ kind: 'text', str: model.fee.amount, font: fontOf(28, false), align: 'right', y: y + 28 * S * 1.15 });
+            y += 28 * S * LINE_HEIGHT;
         });
     }
 
     // Total
     line(true, 6);
-    probe.font = fontOf(34, true);
     row(model.totalLabel, model.total, 34, true);
 
     // Footer
-    y += 14;
+    y += 14 * S;
     text(model.footer, 28, { align: 'center' });
 
     // Draw it all on a canvas that is exactly as tall as needed
-    const height = Math.ceil(y + PAD);
+    const height = Math.ceil(y + pad);
     const canvas = document.createElement('canvas');
-    canvas.width = WIDTH_PX;
+    canvas.width = outWidth;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, WIDTH_PX, height);
+    ctx.fillRect(0, 0, outWidth, height);
     ctx.fillStyle = '#000';
     ctx.textBaseline = 'alphabetic';
 
     ops.forEach(op => {
         if (op.kind === 'line') {
             ctx.strokeStyle = '#000';
-            ctx.lineWidth = 2;
-            ctx.setLineDash(op.dashed ? [8, 6] : []);
+            ctx.lineWidth = Math.max(2, 2 * S);
+            ctx.setLineDash(op.dashed ? [8 * S, 6 * S] : []);
             ctx.beginPath();
-            ctx.moveTo(PAD, op.y);
-            ctx.lineTo(WIDTH_PX - PAD, op.y);
+            ctx.moveTo(pad, op.y);
+            ctx.lineTo(outWidth - pad, op.y);
             ctx.stroke();
         } else {
             ctx.font = op.font;
             ctx.textAlign = op.align;
-            const x = op.align === 'center' ? WIDTH_PX / 2 : op.align === 'right' ? WIDTH_PX - PAD : PAD;
+            const x = op.align === 'center' ? outWidth / 2 : op.align === 'right' ? outWidth - pad : pad;
             ctx.fillText(op.str, x, op.y);
         }
     });
@@ -241,14 +246,18 @@ export async function canvasToPdf(canvas, { forceJpeg = false } = {}) {
 }
 
 // ---------- 5. Public: build the PDF file ----------
-export async function createReceiptPdf() {
-    // Make sure the Khmer font is ready before drawing
+// Make sure the Khmer font is ready before drawing
+export async function ensureReceiptFonts() {
     if (document.fonts && document.fonts.load) {
         try {
             await document.fonts.load(`28px K5`, 'ក');
             await document.fonts.load(`bold 28px K5`, 'ក');
         } catch (e) { /* use the fallback font */ }
     }
+}
+
+export async function createReceiptPdf() {
+    await ensureReceiptFonts();
     const canvas = drawReceipt(buildReceiptModel());
     const bytes = await canvasToPdf(canvas);
     return new Blob([bytes], { type: 'application/pdf' });

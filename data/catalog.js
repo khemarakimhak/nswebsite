@@ -39,20 +39,26 @@
 // ---------------------------------------------------------------------
 export const SETTINGS = {
     USD_TO_KHR: 4000,            // 1 US dollar = 4000៛  (used when the site is in Khmer)
-    SENDER_PHONE: "070 90 98 96" // printed on every PDF receipt as the sender's number
+    SENDER_PHONE: "070 90 98 96", // printed on every PDF receipt as the sender's number
+    PRINTER_DOTS: 384             // printer width in dots: 384 = 58 mm paper, 576 = 80 mm paper
 };
 
 
 // ---------------------------------------------------------------------
 //  DELIVERY FEES (in US dollars, added to the total)
-//     fee  = one fixed price
-//     fees = the customer picks one of these prices
+//     fee   = one fixed price
+//     fees  = the customer picks one of these zones. Each zone has a price (fee),
+//             an English name and a Khmer name (nameKh). Keep every price different.
 //  pickup is free. Example: 1.625 dollars = 6500 riel.
 // ---------------------------------------------------------------------
 export const DELIVERY = {
     vet:      { fee: 1.50 },
     jt:       { fee: 1.625 },
-    delivery: { fees: [1.00, 1.50, 2.00] },
+    delivery: { fees: [
+        { fee: 1.00, name: "Near",       nameKh: "ចម្ងាយជិត" },
+        { fee: 1.50, name: "Average",    nameKh: "ចម្ងាយល្មម" },
+        { fee: 2.00, name: "Outside PP", nameKh: "ជាយក្រុងភ្នំពេញ" },
+    ] },
     pickup:   { fee: 0 },
 };
 

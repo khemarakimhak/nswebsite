@@ -32,18 +32,13 @@ export const TRANSLATIONS = {
 
     // ----- Home page -----
     home_title:          { en: "Latest Updates",                        kh: "ព័ត៌មានថ្មីៗ" },
-    home_subtitle:       { en: "News & Announcements",                  kh: "ព័ត៌មាន និងសេចក្តីជូនដំណឹង" },
     home_empty:          { en: "No updates yet.",                       kh: "មិនមានព័ត៌មានថ្មីទេ" },
 
     // ----- Section headings -----
     woggle_title:        { en: "Scout Woggles Collection",              kh: "កងកន្សែង" },
-    woggle_subtitle:     { en: "Normal & Custom Woggles",               kh: "កងធម្មតា និងកងដាក់ឈ្មោះ" },
     shop_title:          { en: "General Scout Gear",                    kh: "សម្ភារៈកាយរឹទ្ធិទូទៅ" },
-    shop_subtitle:       { en: "Standard Accessories",                  kh: "គ្រឿងប្រើប្រាស់ទូទៅ" },
     pin_title:           { en: "Scout Pins",                            kh: "កន្លាស់" },
-    pin_subtitle:        { en: "Scout and Normal Pins",                 kh: "កន្លាស់ទូទៅ និងកាយរឹទ្ធ" },
     badge_title:         { en: "Scout Badges",                          kh: "បេជ" },
-    badge_subtitle:      { en: "Patches & Insignia",                    kh: "បេជទូទៅ និងកាយរឹទ្ធ" },
 
     // ----- Search boxes -----
     search_woggle:       { en: "Search woggle...",                      kh: "ស្វែងរកម៉ូតកង..." },
@@ -78,6 +73,7 @@ export const TRANSLATIONS = {
     woggle_normal_cart_label: { en: "Normal {style} Woggle ({color})",  kh: "កង {style} ធម្មតា ({color})" },
     cart_copy_receipt:   { en: "Copy Receipt",                          kh: "ចម្លងវិក្កយបត្រ" },
     cart_export_pdf:     { en: "Export PDF",                            kh: "ទាញយកជា PDF" },
+    cart_print:          { en: "Print",                                  kh: "បោះពុម្ព" },
     cart_clear:          { en: "Clear Cart",                            kh: "សម្អាតកន្ត្រក" },
 
     // ----- Cart: receiver details -----
@@ -91,6 +87,10 @@ export const TRANSLATIONS = {
     delivery_delivery:     { en: "Delivery",                            kh: "ដឹកជូន" },
     delivery_pickup:       { en: "Pick up",                             kh: "មកយកផ្ទាល់" },
     delivery_free:         { en: "Free",                                kh: "ឥតគិតថ្លៃ" },
+    // Where the customer ordered from. Shown after the receiver name, e.g. "Sophie (TikTok)"
+    source_page:           { en: "Page",                                kh: "Page" },
+    source_telegram:       { en: "Telegram",                            kh: "Telegram" },
+    source_tiktok:         { en: "TikTok",                              kh: "TikTok" },
     delivery_choose_fee:   { en: "Please choose a delivery fee",        kh: "សូមជ្រើសរើសតម្លៃដឹកជូន" },
     // Line added to the cart, receipt and PDF when the delivery costs money: "Delivery fee (VET)"
     delivery_fee_label:    { en: "Delivery fee",                        kh: "ថ្លៃដឹកជញ្ជូន" },
@@ -109,13 +109,18 @@ export const TRANSLATIONS = {
     confirm_delete_saved:  { en: "Delete the saved order of {name}?",   kh: "លុបការបញ្ជាទិញរបស់ {name}?" },
 
     // ----- Small pop-up messages -----
-    toast_added:         { en: "Item added to cart!",                   kh: "ទំនិញបានដាក់ចូលកន្ត្រកទំនិញ!" },
     toast_added_named:   { en: "{qty}x {name} added!",                  kh: "បានបន្ថែម {qty}x {name}!" },
     toast_cart_empty:    { en: "Cart is empty!",                        kh: "កន្ត្រកទទេ!" },
     toast_copied:        { en: "Receipt copied!",                       kh: "បានចម្លងវិក្កយបត្រ!" },
     toast_copy_failed:   { en: "Copy failed",                           kh: "ចម្លងមិនបាន" },
     toast_cleared:       { en: "Cart cleared",                          kh: "បានសម្អាតកន្ត្រក" },
     toast_pdf_done:      { en: "PDF saved!",                            kh: "បានរក្សាទុក PDF!" },
+    print_connecting:    { en: "Connecting to printer...",              kh: "កំពុងភ្ជាប់ម៉ាស៊ីនបោះពុម្ព..." },
+    print_printing:      { en: "Printing...",                           kh: "កំពុងបោះពុម្ព..." },
+    print_done:          { en: "Sent to printer!",                      kh: "បានផ្ញើទៅម៉ាស៊ីនបោះពុម្ព!" },
+    print_failed:        { en: "Printing failed: {reason}",             kh: "បោះពុម្ពមិនបាន៖ {reason}" },
+    print_no_printer:    { en: "No printer selected",                   kh: "មិនបានជ្រើសរើសម៉ាស៊ីនបោះពុម្ព" },
+    print_image_saved:   { en: "Image saved. Open it in the WePrint app.", kh: "បានរក្សាទុករូបភាព។ សូមបើកក្នុងកម្មវិធី WePrint។" },
     toast_pdf_failed:    { en: "Could not create PDF",                  kh: "បង្កើត PDF មិនបាន" },
 
     // ----- Receipt (the text customers copy and send you) -----

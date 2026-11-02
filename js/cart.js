@@ -2,7 +2,7 @@
 
 import { WOGGLE_PRODUCTS, SHOP_PRODUCTS, PIN_PRODUCTS, BADGE_PRODUCTS } from './products.js';
 import { formatPrice } from './currency.js';
-import { t, productName, styleLabel, optionLabel } from './i18n.js';
+import { t, productName, styleLabel, optionLabel, getLang } from './i18n.js';
 import { DELIVERY } from '../data/catalog.js';
 
 let cart = { standardItems: {}, customWoggles: [] };
@@ -11,7 +11,9 @@ let cart = { standardItems: {}, customWoggles: [] };
 const RECEIVER_KEY = 'nimet_scout_receiver';
 export const DELIVERY_METHODS = ['vet', 'jt', 'delivery', 'pickup'];
 // delivery = chosen method; deliverySub = the chosen price when a method offers several (Delivery)
-let receiver = { name: '', phone: '', address: '', delivery: '', deliverySub: '' };
+export const SOURCES = ['page', 'telegram', 'tiktok'];
+// source = where the customer ordered from (shown after the name: "Sophie (TikTok)")
+let receiver = { name: '', source: '', phone: '', address: '', delivery: '', deliverySub: '' };
 
 export function getReceiver() {
     return receiver;
@@ -35,6 +37,36 @@ export function deliveryLabel(code) {
     return DELIVERY_METHODS.includes(code) ? t(`delivery_${code}`) : '';
 }
 
+export function sourceLabel(code) {
+    return SOURCES.includes(code) ? t(`source_${code}`) : '';
+}
+
+// Choose where the customer ordered from. Choosing the same one again clears it.
+export function setSource(code) {
+    setReceiverField('source', receiver.source === code ? '' : code);
+}
+
+// "Sophie" or "Sophie (TikTok)". Shows "-" when no name was typed.
+export function receiverDisplayName(rec = receiver) {
+    const base = (rec.name || '').trim() || '-';
+    const source = sourceLabel(rec.source);
+    return source ? `${base} (${source})` : base;
+}
+
+// A delivery zone name in the current language (Near / ចម្ងាយជិត)
+export function zoneLabel(zone) {
+    return (getLang() === 'kh' && zone.nameKh) ? zone.nameKh : zone.name;
+}
+
+// "VET", or "Delivery - Near" when the Delivery zone is chosen. '' when nothing is chosen.
+export function receiverDeliveryText(rec = receiver) {
+    const base = deliveryLabel(rec.delivery);
+    const zones = DELIVERY[rec.delivery] && DELIVERY[rec.delivery].fees;
+    if (!base || !Array.isArray(zones)) return base;
+    const zone = zones.find(z => z.fee === Number(rec.deliverySub));
+    return zone ? `${base} - ${zoneLabel(zone)}` : base;
+}
+
 // Choose a delivery method. Choosing the same one again clears it.
 export function setDeliveryMethod(code) {
     const next = receiver.delivery === code ? '' : code;
@@ -53,7 +85,7 @@ export function deliveryFeeFor(rec) {
     if (!config) return 0;
     if (Array.isArray(config.fees)) {
         const picked = Number(rec.deliverySub);
-        return config.fees.includes(picked) ? picked : 0;
+        return config.fees.some(z => z.fee === picked) ? picked : 0;
     }
     return config.fee || 0;
 }
@@ -73,7 +105,7 @@ export function getDeliveryRow() {
     if (isCartEmpty()) return null;
     const amount = getDeliveryFee();
     if (amount <= 0) return null;
-    return { label: `${t('delivery_fee_label')} (${deliveryLabel(receiver.delivery)})`, amount };
+    return { label: `${t('delivery_fee_label')} (${receiverDeliveryText()})`, amount };
 }
 
 // "customWoggles" holds every item that was added from a choice menu:
@@ -177,7 +209,7 @@ export function restoreSnapshot(snapshot) {
         standardItems: saved.cart.standardItems || {},
         customWoggles: (saved.cart.customWoggles || []).map(w => ({ ...w, qty: w.qty || 1 }))
     };
-    receiver = { name: '', phone: '', address: '', delivery: '', deliverySub: '', ...saved.receiver };
+    receiver = { name: '', source: '', phone: '', address: '', delivery: '', deliverySub: '', ...saved.receiver };
     saveCartToStorage();
     saveReceiver();
 }
@@ -252,10 +284,10 @@ export function generateFormattedReceipt() {
     const dash = v => (v && String(v).trim()) ? String(v).trim() : '-';
     const lines = [t('receipt_title') + "\n"];
 
-    lines.push(`${t('receipt_receiver')}: ${dash(receiver.name)}`);
+    lines.push(`${t('receipt_receiver')}: ${receiverDisplayName()}`);
     lines.push(`${t('receipt_phone')}: ${dash(receiver.phone)}`);
     lines.push(`${t('receipt_address')}: ${dash(receiver.address)}`);
-    lines.push(`${t('receipt_delivery')}: ${dash(deliveryLabel(receiver.delivery))}`);
+    lines.push(`${t('receipt_delivery')}: ${dash(receiverDeliveryText())}`);
     lines.push("");
 
     getReceiptItems().forEach(r => {

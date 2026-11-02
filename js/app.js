@@ -25,6 +25,9 @@ import {
     setReceiverField,
     setDeliveryMethod,
     setDeliveryFee,
+    setSource,
+    sourceLabel,
+    zoneLabel,
     getDeliveryFee,
     getDeliveryRow,
     getCartTotal,
@@ -32,6 +35,7 @@ import {
 } from './cart.js';
 
 import { createReceiptPdf } from './pdf.js';
+import './print.js';   // optional Bluetooth print feature (delete this line + js/print.js + the Print button to remove it)
 import {
     listSaved,
     saveCurrentOrder,
@@ -87,10 +91,9 @@ function renderGrid(containerId, allProducts, query = '') {
     container.innerHTML = products.map(p => {
         const fallbackElement = p.svgIcon ? SVG_ICONS[p.svgIcon] : `<i class="fa-solid ${p.icon} text-3xl"></i>`;
         const name = escapeHTML(productName(p));
-        const opensModal = Array.isArray(p.options) && p.options.length > 0;
 
         return `
-        <div class="bg-white rounded-3xl p-3 border border-purple-100 shadow-sm flex flex-col justify-between overflow-hidden">
+        <div data-action="open-product" data-id="${p.id}" role="button" tabindex="0" aria-label="${name}" class="bg-white rounded-3xl p-3 border border-purple-100 shadow-sm flex flex-col justify-between overflow-hidden cursor-pointer active:scale-[0.98] transition-transform">
             <div class="w-full aspect-square bg-purple-50 rounded-2xl flex items-center justify-center text-[#7414DC] mb-3 relative overflow-hidden group">
                 <img src="${p.image}" alt="${name}" loading="lazy"
                      class="w-full h-full object-cover rounded-2xl"
@@ -101,21 +104,9 @@ function renderGrid(containerId, allProducts, query = '') {
                 ${p.isCustom ? `<span class="absolute top-2 left-2 px-4 py-1.5 bg-[#F4A81E] text-gray-900 font-black text-[11px] rounded-full uppercase tracking-wider shadow-sm z-10">${escapeHTML(t('tag_custom'))}</span>` : ''}
             </div>
 
-            <div class="flex items-end justify-between gap-1">
-                <div class="min-w-0 flex-1">
-                    <h4 class="font-extrabold text-gray-900 text-xs leading-tight truncate mb-0.5">${name}</h4>
-                    <p class="text-xs font-black text-[#7414DC]">${formatPrice(p.price)}</p>
-                </div>
-
-                ${opensModal ? `
-                    <button data-action="open-woggle-modal" data-id="${p.id}" aria-label="Choose options for ${name}" class="w-9 h-9 bg-[#F4A81E] text-gray-900 rounded-2xl font-black text-sm flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition-all">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
-                ` : `
-                    <button data-action="add-standard" data-id="${p.id}" aria-label="Add ${name}" class="w-9 h-9 bg-[#7414DC] hover:bg-purple-800 text-white rounded-2xl font-black text-sm flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition-all">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
-                `}
+            <div class="min-w-0">
+                <h4 class="font-extrabold text-gray-900 text-xs leading-tight line-clamp-2 mb-0.5">${name}</h4>
+                <p class="text-xs font-black text-[#7414DC]">${formatPrice(p.price)}</p>
             </div>
         </div>
     `}).join('');
@@ -266,22 +257,35 @@ function swatchStyle(option) {
     return `background:linear-gradient(90deg, ${colors[0]} 50%, ${colors[1]} 50%)`;
 }
 
+// Does this product have a choice menu (colors, classes...)?
+const hasProductOptions = p => Array.isArray(p.options) && p.options.length > 0;
+
 // Square picture: picture of the chosen option -> main picture -> tinted icon
 function updateWoggleImage() {
     const img = document.getElementById('woggle-modal-image');
     const fallback = document.getElementById('woggle-modal-fallback');
     if (!img || !fallback || !activeProduct) return;
 
-    const sources = [optionImagePath(activeProduct, selectedColor), activeProduct.image].filter(Boolean);
+    const hasOptions = hasProductOptions(activeProduct);
+    const sources = [hasOptions ? optionImagePath(activeProduct, selectedColor) : '', activeProduct.image].filter(Boolean);
     let attempt = 0;
 
-    const swatches = optionSwatches(selectedColor);
+    // Products without a menu have more room, so their picture is shown bigger
+    const picture = document.getElementById('woggle-modal-picture');
+    if (picture) picture.style.maxWidth = hasOptions ? 'min(100%, 42vh)' : 'min(100%, 56vh)';
+
+    const swatches = hasOptions ? optionSwatches(selectedColor) : [];
     const tint = swatches.find(c => c.toUpperCase() !== '#FFFFFF') || swatches[0] || '#7414DC';
-    const iconKey = activeProduct.svgIcon || 'woggle';
 
     fallback.style.display = 'none';
     fallback.style.color = tint;
-    fallback.innerHTML = (SVG_ICONS[iconKey] || SVG_ICONS.woggle).replace('w-8 h-8', 'w-24 h-24');
+    if (activeProduct.svgIcon) {
+        fallback.innerHTML = (SVG_ICONS[activeProduct.svgIcon] || SVG_ICONS.woggle).replace('w-8 h-8', 'w-24 h-24');
+    } else if (activeProduct.icon) {
+        fallback.innerHTML = `<i class="fa-solid ${activeProduct.icon} text-7xl"></i>`;
+    } else {
+        fallback.innerHTML = SVG_ICONS.woggle.replace('w-8 h-8', 'w-24 h-24');
+    }
 
     img.style.display = 'block';
     img.onerror = () => {
@@ -297,7 +301,7 @@ function updateWoggleImage() {
 }
 
 function renderWoggleColors() {
-    if (!activeProduct) return;
+    if (!activeProduct || !hasProductOptions(activeProduct)) return;
 
     const container = document.getElementById('woggle-color-selector');
     if (container) {
@@ -350,19 +354,26 @@ function refreshModalText() {
     renderWoggleColors();
 }
 
-function openWoggleModal(productId) {
+// The product pop-up: big picture, quantity and Add to Cart for every product.
+// Products with a choice menu also show their options (and the name field for "Woggle Name").
+function openProductModal(productId) {
     const product = ALL_PRODUCTS.find(p => p.id === productId);
-    if (!product || !Array.isArray(product.options) || product.options.length === 0) return;
+    if (!product) return;
 
+    const hasOptions = hasProductOptions(product);
     activeProduct = product;
-    selectedColor = product.options[0];
+    selectedColor = hasOptions ? product.options[0] : '';
     modalQty = 1;
 
     updateModalHeadings();
 
+    // Hide the option parts when the product has no menu
+    document.getElementById('woggle-selected-row')?.classList.toggle('hidden', !hasOptions);
+    document.getElementById('woggle-options-block')?.classList.toggle('hidden', !hasOptions);
+
     // Only woggles with a name show the name field
     const nameWrapper = document.getElementById('woggle-name-wrapper');
-    if (nameWrapper) nameWrapper.classList.toggle('hidden', product.kind === 'normal');
+    if (nameWrapper) nameWrapper.classList.toggle('hidden', product.kind !== 'custom');
 
     updateModalPrice();
     renderWoggleColors();
@@ -382,18 +393,25 @@ function fillReceiverForm() {
     document.querySelectorAll('[data-receiver]').forEach(el => {
         el.value = r[el.getAttribute('data-receiver')] || '';
     });
+    renderSource();
     renderDelivery();
 }
 
 const BTN_ON = 'bg-gray-900 text-white border-gray-900';
 const BTN_OFF = 'bg-gray-50 text-gray-700 border-gray-200';
+// Selected colors: VET orange, J&T red, the others dark
+const DELIVERY_ON = {
+    vet: 'bg-orange-500 text-white border-orange-500',
+    jt: 'bg-red-600 text-white border-red-600'
+};
 
 // Price shown under each delivery button, in the current currency
 function deliveryFeeText(code) {
     const config = DELIVERY[code];
     if (!config) return '';
     if (Array.isArray(config.fees)) {
-        const lowest = Math.min(...config.fees), highest = Math.max(...config.fees);
+        const prices = config.fees.map(z => z.fee);
+        const lowest = Math.min(...prices), highest = Math.max(...prices);
         return lowest === highest ? formatPrice(lowest) : `${formatPrice(lowest)} - ${formatPrice(highest)}`;
     }
     return config.fee > 0 ? `+${formatPrice(config.fee)}` : t('delivery_free');
@@ -406,26 +424,47 @@ function renderDelivery() {
     document.querySelectorAll('[data-action="select-delivery"]').forEach(btn => {
         const code = btn.getAttribute('data-value');
         const active = code === receiver.delivery;
-        btn.className = `py-2 px-2 text-xs font-bold rounded-xl border transition-all ${active ? BTN_ON : BTN_OFF}`;
+        const onClasses = DELIVERY_ON[code] || BTN_ON;
+        btn.className = `py-2 px-2 text-xs font-bold rounded-xl border transition-all ${active ? onClasses : BTN_OFF}`;
         const feeEl = btn.querySelector('[data-delivery-fee]');
         if (feeEl) feeEl.textContent = deliveryFeeText(code);
     });
 
-    // 2. Methods with several prices (Delivery) show their price choices
+    // 2. Methods with several zones (Delivery: Near / Average / Outside PP)
     const config = DELIVERY[receiver.delivery];
     const subBox = document.getElementById('delivery-sub');
     if (subBox) {
         const hasChoices = !!(config && Array.isArray(config.fees));
         subBox.classList.toggle('hidden', !hasChoices);
-        subBox.innerHTML = hasChoices ? config.fees.map(fee => {
-            const active = Number(receiver.deliverySub) === fee;
-            return `<button type="button" data-action="select-delivery-fee" data-value="${fee}" class="py-2 px-2 text-xs font-bold rounded-xl border transition-all ${active ? BTN_ON : BTN_OFF}">${formatPrice(fee)}</button>`;
+        subBox.innerHTML = hasChoices ? config.fees.map(zone => {
+            const active = Number(receiver.deliverySub) === zone.fee;
+            return `<button type="button" data-action="select-delivery-fee" data-value="${zone.fee}" class="py-2 px-1 text-xs font-bold rounded-xl border transition-all ${active ? BTN_ON : BTN_OFF}">
+                <span class="block leading-tight">${escapeHTML(zoneLabel(zone))}</span>
+                <span class="block text-[10px] font-semibold opacity-70">${formatPrice(zone.fee)}</span>
+            </button>`;
         }).join('') : '';
     }
 
-    // 3. Reminder while the price has not been chosen
+    // 3. Reminder while the zone has not been chosen
     const hint = document.getElementById('delivery-fee-hint');
     if (hint) hint.classList.toggle('hidden', !needsDeliveryFeeChoice());
+}
+
+// Selected colors of the order source: Page blue, Telegram light blue, TikTok black
+const SOURCE_ON = {
+    page: 'bg-[#0866FF] text-white border-[#0866FF]',
+    telegram: 'bg-[#0088CC] text-white border-[#0088CC]',
+    tiktok: 'bg-black text-white border-black'
+};
+
+// Where the customer ordered from (Page / Telegram / TikTok)
+function renderSource() {
+    const chosen = getReceiver().source;
+    document.querySelectorAll('[data-action="select-source"]').forEach(btn => {
+        const code = btn.getAttribute('data-value');
+        const active = code === chosen;
+        btn.className = `py-2 px-1 text-xs font-bold rounded-xl border transition-all flex items-center justify-center gap-1.5 ${active ? (SOURCE_ON[code] || BTN_ON) : BTN_OFF}`;
+    });
 }
 
 function refreshReceiptText() {
@@ -479,7 +518,7 @@ function renderSavedList() {
         return `
         <div class="flex items-center gap-2 rounded-xl border p-2 ${active ? 'bg-white border-[#7414DC]' : 'bg-white border-gray-200'}">
             <button type="button" data-action="load-order" data-id="${entry.id}" class="flex-1 min-w-0 text-left active:opacity-70" style="min-height:0">
-                <p class="font-bold text-xs text-gray-900 truncate">${escapeHTML(entry.name)}</p>
+                <p class="font-bold text-xs text-gray-900 truncate">${escapeHTML(entry.name)}${entry.receiver.source ? ` <span class="text-[#7414DC]">(${escapeHTML(sourceLabel(entry.receiver.source))})</span>` : ''}</p>
                 <p class="text-[10px] text-gray-500 truncate">${escapeHTML(t('saved_items', { count }))} • ${formatPrice(total)} • ${escapeHTML(formatSavedDate(entry.savedAt))}</p>
             </button>
             <button type="button" data-action="delete-order" data-id="${entry.id}" aria-label="Delete" class="w-9 h-9 shrink-0 text-rose-600 hover:bg-rose-100 rounded-lg flex items-center justify-center" style="min-height:0">
@@ -513,8 +552,8 @@ export function updateCartStateUI() {
                     <p class="text-gray-500">${qty}x @ ${formatPrice(prod.price)} = <strong class="text-[#7414DC]">${formatPrice(subtotal)}</strong></p>
                 </div>
                 <div class="flex items-center gap-1">
-                    <button data-action="change-qty" data-id="${prod.id}" data-change="-1" class="w-7 h-7 bg-white text-gray-700 border rounded-lg font-bold">-</button>
-                    <button data-action="change-qty" data-id="${prod.id}" data-change="1" class="w-7 h-7 bg-[#7414DC] text-white rounded-lg font-bold">+</button>
+                    <button data-action="change-qty" data-id="${prod.id}" data-change="-1" class="w-8 h-8 min-h-0 bg-white text-gray-700 border rounded-lg font-bold">-</button>
+                    <button data-action="change-qty" data-id="${prod.id}" data-change="1" class="w-8 h-8 min-h-0 bg-[#7414DC] text-white rounded-lg font-bold">+</button>
                 </div>
             </div>
         `;
@@ -534,8 +573,8 @@ export function updateCartStateUI() {
                     <p class="text-[11px] text-gray-600">${detail}</p>
                 </div>
                 <div class="flex items-center gap-1">
-                    <button data-action="change-woggle-qty" data-index="${idx}" data-change="-1" class="w-7 h-7 bg-white text-gray-700 border rounded-lg font-bold">-</button>
-                    <button data-action="change-woggle-qty" data-index="${idx}" data-change="1" class="w-7 h-7 bg-[#7414DC] text-white rounded-lg font-bold">+</button>
+                    <button data-action="change-woggle-qty" data-index="${idx}" data-change="-1" class="w-8 h-8 min-h-0 bg-white text-gray-700 border rounded-lg font-bold">-</button>
+                    <button data-action="change-woggle-qty" data-index="${idx}" data-change="1" class="w-8 h-8 min-h-0 bg-[#7414DC] text-white rounded-lg font-bold">+</button>
                 </div>
             </div>
         `;
@@ -599,12 +638,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
         const action = target.getAttribute('data-action');
 
-        if (action === 'open-woggle-modal') {
-            openWoggleModal(target.getAttribute('data-id'));
-        } else if (action === 'add-standard') {
-            changeStandardQty(target.getAttribute('data-id'), 1);
-            updateCartStateUI();
-            showToast(t('toast_added'));
+        if (action === 'open-product') {
+            openProductModal(target.getAttribute('data-id'));
         } else if (action === 'select-color') {
             selectedColor = target.getAttribute('data-value');
             renderWoggleColors();
@@ -652,6 +687,10 @@ window.addEventListener('DOMContentLoaded', () => {
             deleteSavedOrder(entry.id);
             renderSavedList();
             showToast(t('toast_deleted'));
+        } else if (action === 'select-source') {
+            setSource(target.getAttribute('data-value'));
+            renderSource();
+            refreshReceiptText();
         } else if (action === 'select-delivery') {
             setDeliveryMethod(target.getAttribute('data-value'));
             renderDelivery();
@@ -686,6 +725,15 @@ window.addEventListener('DOMContentLoaded', () => {
         if (field.getAttribute('data-receiver') === 'name') renderSavedList();
     });
 
+    // Keyboard: Enter or Space on a product card opens it
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const card = e.target.closest && e.target.closest('[data-action="open-product"]');
+        if (!card) return;
+        e.preventDefault();
+        card.click();
+    });
+
     // Close customizer when tapping the dark backdrop
     const woggleModal = document.getElementById('woggle-customizer-modal');
     if (woggleModal) {
@@ -700,7 +748,17 @@ window.addEventListener('DOMContentLoaded', () => {
         addWoggleBtn.addEventListener('click', () => {
             if (!activeProduct) return;
             const nameInput = document.getElementById('woggle-custom-name');
-            const isNormal = activeProduct.kind === 'normal';
+
+            if (!hasProductOptions(activeProduct)) {
+                // Plain product (no menu): add straight to the cart
+                changeStandardQty(activeProduct.id, modalQty);
+                woggleModal?.classList.add('hidden');
+                updateCartStateUI();
+                showToast(t('toast_added_named', { qty: modalQty, name: productName(activeProduct) }));
+                return;
+            }
+
+            const isNormal = activeProduct.kind !== 'custom';
             const customName = isNormal ? '' : (nameInput.value.trim() || "Standard");
 
             addVariantItem({

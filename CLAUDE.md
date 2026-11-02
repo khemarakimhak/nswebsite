@@ -37,6 +37,7 @@ js/                     <- code; the owner normally does not edit these
   currency.js           formatPrice(): USD in English, riel in Khmer
   pdf.js                55 mm thermal receipt PDF (canvas -> PDF, no library)
   saved-orders.js       saved customers + carts (localStorage), one per receiver name
+  print.js              OPTIONAL Bluetooth print of the receipt (separate feature, see "Printing")
   icons.js              the Scout logo as inline icon paths (used for every woggle icon)
 assets/                 pictures, one folder per section (see below)
   logo/                 nimet-scout-store-logo.svg (header), scout-logo.svg (source of the woggle icon)
@@ -50,9 +51,15 @@ assets/                 pictures, one folder per section (see below)
 - **Products** come from `data/catalog.js` through `js/products.js`. IDs are generated: `<section>-<slug of name>`
   (`shop-coffee-mug`). Woggle style cards are `wn-<style>` (woggle with a name) and `wp-<style>` (normal woggle).
   Renaming an item changes its ID, so carts saved on customers' phones will drop it. This is harmless.
-- **Choice menu:** a product with `options: [...]` gets a "+" button that opens the modal: square picture on top,
-  option buttons, optional name field, quantity stepper, price on the Add to Cart button.
-  - Name field is shown only for `kind: 'custom'` (the "Woggle Name" cards). Everything else is `kind: 'normal'`.
+- **Product pop-up:** tapping anywhere on a product card (there are no "+" buttons on the cards) opens one shared pop-up
+  (`openProductModal()` in `js/app.js`, markup `#woggle-customizer-modal`): big square picture on top, quantity stepper, price on the
+  Add to Cart button. Cards are `role="button"`; Enter / Space also open them. A product WITHOUT `options` shows only the picture
+  (bigger, 56vh), quantity and Add to Cart, and adds to `cart.standardItems`. A product WITH `options: [...]` also shows the
+  option buttons and adds to `cart.customWoggles` (see Choice menu below). The picture area is the only place that needs a photo;
+  without one an icon is shown.
+- **Choice menu:** a product with `options: [...]` shows these extra parts in the pop-up: option buttons and, for "Woggle Name"
+  cards, the name field.
+  - Name field is shown only for `kind: 'custom'` (the "Woggle Name" cards). Every other product hides it.
   - Two-color options are written `"White-Red"`; the app splits on `-` and draws a two-tone swatch.
   - Non-color options (e.g. Rank Badge classes) have no swatch. `optionsTitle: "class"` changes the menu wording.
 - **Cart:** plain items live in `cart.standardItems` (id -> qty). Choice-menu items live in `cart.customWoggles`
@@ -60,16 +67,25 @@ assets/                 pictures, one folder per section (see below)
   items merge into one line with a quantity. Items removed from the catalog are ignored.
 - **Receiver details:** name, phone, address and delivery method (VET / J&T / Delivery / Pick up) in the cart. Saved on the
   phone, included in the copied receipt and the PDF. "Clear Cart" empties items only.
-- **Delivery fees** (`DELIVERY` in `data/catalog.js`, in USD): VET $1.50, J&T $1.625 (= 6,500៛), Delivery = customer picks
-  $1.00 / $1.50 / $2.00 (none preselected; a hint shows until one is chosen), Pick up is free. The fee is added to the total
+- **Delivery fees** (`DELIVERY` in `data/catalog.js`, in USD): VET $1.50, J&T $1.625 (= 6,500៛), Delivery = customer picks a
+  named zone: Near $1.00 (ចម្ងាយជិត), Average $1.50 (ចម្ងាយល្មម), Outside PP $2.00 (ជាយក្រុងភ្នំពេញ) (none preselected;
+  a hint shows until one is chosen; zones are `fees: [{ fee, name, nameKh }]`, keep each price different since the price
+  identifies the zone). A chosen zone is written "Delivery - Near" in the receipt, fee row and PDF, Pick up is free. The fee is added to the total
   and shown as its own row ("Delivery fee (VET)") in the cart, the copied receipt and the PDF. No fee row for Pick up, and no
   fee is counted while the cart is empty. Tapping a chosen method (or fee) again clears it. Prices like 1.625 are shown
   as `$1.625` in English (`formatPrice` keeps a 3rd decimal only when needed).
+- **Order source:** three buttons under the Receiver Name box (Page / Telegram / TikTok, tap again to clear) store
+  `receiver.source`. The chosen source is added after the name: "Sophie (TikTok)" in the copied receipt, the PDF name line and
+  the saved-orders list (`receiverDisplayName()` in `js/cart.js`). Saved orders are still matched by the plain name only.
+- **Order source colors (when selected):** Page `#0866FF`, Telegram `#0088CC`, TikTok black (`SOURCE_ON` in `js/app.js`).
+- **Delivery button colors:** the selected VET button is orange, J&T red, the others dark (`DELIVERY_ON` in `js/app.js`).
 - **Saved orders:** the clipboard icon button to the right of the Receiver Name box opens a panel listing saved customers.
   "Save current" stores the cart + receiver details under the receiver name (same name = update, name required). Tapping a
   row loads that cart back for adding more products (asks first if the current cart has unsaved items); the trash button
   on the right deletes it (with a confirm) once the order is done. Stored in `localStorage` key `nimet_scout_saved_orders`,
   so the list exists only on that phone/browser and is not shared between devices.
+- **Tab titles:** each tab has one big title (`text-xl`) and no gray subtitle line. The old `*_subtitle` wording keys were deleted
+  from `translations.js` because nothing uses them.
 - **Logos:** the header shows `assets/logo/nimet-scout-store-logo.svg` (falls back to a compass icon if the file is missing).
   Every woggle icon (bottom menu, picture-less product cards, the choice menu) is the Scout logo from `js/icons.js`,
   drawn with `currentColor` so it follows the active/inactive and option colors. Pin and badge icons are unchanged.
@@ -86,6 +102,7 @@ assets/                 pictures, one folder per section (see below)
 - **Prices are stored in US dollars.** Khmer mode shows riel: `price * SETTINGS.USD_TO_KHR` (currently 4000),
   formatted like `12,000៛`. English mode shows `$12.00`. Never store riel prices.
 - **Default language is Khmer** (`kh`). The EN/KH slider toggles it and re-renders grids, news, cart, open menu and static text.
+- **Woggle styles** (in `WOGGLE_STYLES`): Lis, Romdoul, Angkor, Red Cross. Each style makes two cards ("Woggle Name" and "Normal").
 - **Standard woggle prices:** woggle with name `WOGGLE_NAME_PRICE` = $3.00; normal woggles `WOGGLE_NORMAL_PRICE` = $1.25.
 - **The cart stores English names** (style, option, title) and translates when displaying. Do not store translated text.
 - **All wording lives in `data/translations.js`.** Use `t('key')`; do not hard-code English or Khmer strings in JS/HTML.
@@ -98,8 +115,30 @@ assets/                 pictures, one folder per section (see below)
 - **PDF receipt layout (do not reorder):** `Nimet Scout Shop` (English) -> Khmer shop name -> receiver name -> line ->
   sender phone (`SETTINGS.SENDER_PHONE`, 070 90 98 96) -> receiver phone -> address -> delivery method -> line ->
   items -> delivery fee row (only if > 0) -> total -> Khmer footer.
+- **CSS gotcha:** `css/styles.css` forces every `button`, `input` and `select` to be at least 48 px tall. A small square button
+  (for example `w-11 h-11`) must also have the class `min-h-0`, otherwise it turns into a tall rectangle.
 - Touch targets are at least 48 px and text inputs use 16 px (prevents iOS zoom). Keep it mobile-first (max width `max-w-lg`).
 - User-typed text (names, address) must go through `escapeHTML` before being put into `innerHTML`.
+
+## Printing (optional, separate feature)
+
+`js/print.js` + the small "Print" button next to "Export PDF" in the cart. It is self-contained: to remove it, delete
+`js/print.js`, the `<button id="print-btn">` in `index.html`, and the `import './print.js';` line in `js/app.js`
+(plus the `cart_print` / `print_*` keys in `translations.js` and `PRINTER_DOTS` in `catalog.js` if wanted).
+
+- The printer is a Detonger P1 (58 mm paper). It cannot pair with an iPhone in Settings; the maker's app is WePrint.
+  The maker's SDK (Dothantech **LPAPI**, a compiled native iOS library) is NOT usable from a website. From its binary we only know
+  it talks Bluetooth Low Energy through these GATT services: `FFE0` (char `FFE1`), `18F0`, `49535343-FE7D-4AE5-8FA9-9FAFD205E455`,
+  `E7810A71-73AE-499D-8C15-FAA9AEF0C3F2`, and wraps data in its own packet layer. Whether the P1 also accepts plain ESC/POS is unconfirmed.
+- Two paths, chosen automatically in `onPrintClick()`:
+  1. `navigator.bluetooth` exists (Bluefy on iPhone, Chrome on Android/PC): connect over BLE (device picker lists all devices),
+     find the first writable characteristic in the services above, send an ESC/POS raster image (`GS v 0`) in 100-byte chunks.
+  2. No Web Bluetooth (normal iPhone Safari): share sheet with a black/white PNG (`nimet-receipt.png`) so it can be sent to WePrint;
+     if sharing is unavailable the PNG is downloaded instead.
+- The receipt is the same Khmer receipt as the PDF, drawn by `drawReceipt()` in `js/pdf.js` at the printer width
+  (`SETTINGS.PRINTER_DOTS`: 384 for 58 mm, 576 for 80 mm; layout width 480 design units so text is about 22 dots high).
+- Verified only with a mock Bluetooth printer (bytes decode to the correct 384-dot image). Not yet confirmed on the real P1.
+  If direct Bluetooth printing does not work on the real printer, remove path 1 or the whole feature rather than reverse-engineering LPAPI.
 
 ## Pictures
 
@@ -110,12 +149,12 @@ Put square pictures (about 800 x 800) in the section's own folder and type only 
 | Shop | `assets/shop/` | `mug.jpg` |
 | Pin | `assets/pin/` | `pin-national.jpg` |
 | Badge | `assets/badge/` | `rank-badge.jpg` |
-| Woggle | `assets/woggle/` | `woggle-scout.jpg`, `normal-woggle-scout.jpg`, `round-lis-woggle.jpg` |
+| Woggle | `assets/woggle/` | `woggle-lis.jpg`, `normal-woggle-lis.jpg`, `round-lis-woggle.jpg` |
 | News | `assets/news/` | any name used in `data/news.js` (shown as a 16:9 banner) |
 
 Picture for one choice (each color, class...) sits in the same folder: `<imageKey>-<option>.jpg`, all lowercase, spaces become `-`.
-- Woggle with a name: `scout-dark-blue.jpg`, `red-cross-wood-white.jpg`
-- Normal woggle: `normal-scout-dark-blue.jpg`
+- Woggle with a name: `lis-dark-blue.jpg`, `red-cross-wood-white.jpg`
+- Normal woggle: `normal-lis-dark-blue.jpg`
 - Other items (`imageKey` = slug of the item name): `round-lis-woggle-red.jpg`, `square-lis-woggle-white-red.jpg`, `rank-badge-star-class.jpg`
 
 If a choice picture is missing the main picture is used; if that is missing too, an icon is shown. Nothing breaks.
@@ -137,8 +176,7 @@ and confirm the page is 55 mm wide and the Khmer text looks right. Hard-refresh 
 
 ## Open items
 
-- Placeholder prices to confirm in `data/catalog.js`: the five scarves ($5.00) and the Rank Badge ($2.00) are marked `TODO`.
+- Placeholder prices to confirm in `data/catalog.js`: the six scarves ($5.00) are marked `TODO`.
   Round Lis and Square Lis woggles use the normal-woggle price.
 - Khmer wording in `data/translations.js` and `data/catalog.js` is partly draft; the owner reviews and corrects it.
-- Possible Khmer typo to confirm: "កន្សេងលឿង" (Yellow Scarf), maybe "កន្សែងលឿង".
 - The repo had no `assets/` folder when last checked; pictures must be uploaded for product images to show.
