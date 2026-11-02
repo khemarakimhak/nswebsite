@@ -1,47 +1,46 @@
 /* css/styles.css - Nimet Scout Shop Custom Styles & Design Tokens */
 
-/* ---------- Khmer font (k5.woff2 sits in this same css/ folder) ----------
-   unicode-range = only Khmer letters use this font.
-   English letters and numbers keep using the normal system font. */
-@font-face {
-font-family: 'K5';
-src: url('k5.woff2') format('woff2');
-font-weight: 100 900;   /* one file covers every weight, so no ugly fake-bold */
-font-style: normal;
-font-display: swap;
-unicode-range: U+1780-17FF, U+19E0-19FF, U+200B-200D;
-}
+/* Import Kantumruy Pro from Google Fonts for weights 400 (Regular) and 600 (Semi-Bold) */
+@import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600&display=swap');
 
 :root {
 --brand-purple: #7414DC;
 --brand-gold: #F4A81E;
 --brand-green: #80BE43;
 --brand-bg: #ffe7e5;
---font-main: 'K5', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+--font-main: 'Kantumruy Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 html, body {
 background-color: var(--brand-bg) !important;
 font-family: var(--font-main);
+font-weight: 400; /* Default regular text weight */
 -webkit-tap-highlight-color: transparent;
 touch-action: manipulation;
 }
 
-/* Buttons and text boxes must use the same font (Khmer names typed by customers too) */
+/* Map all bold elements, headers, and font-weight utilities to weight 600 (Semi-Bold) */
+b, strong, h1, h2, h3, h4, h5, h6,
+.font-bold, .font-semibold, .font-extrabold, .font-black {
+font-weight: 600 !important;
+}
+
+/* Form controls inherit the main Kantumruy Pro font */
 button, input, select, textarea {
 font-family: inherit;
 }
 
-/* Receipt box is monospace for English; Khmer letters still use K5 */
+/* Monospace output container uses Kantumruy Pro for proper Khmer glyph rendering */
 .font-mono, pre {
-font-family: 'K5', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+font-family: 'Kantumruy Pro', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
 }
 
-/* Minimum recommended touch target size */
+/* Touch-friendly target size for mobile elements */
 button, input, select {
 min-height: 48px;
 }
 
+/* Utility Brand Colors */
 .bg-brand-purple { background-color: #7414DC; }
 .text-brand-purple { color: #7414DC; }
 .border-brand-purple { border-color: #7414DC; }
@@ -52,7 +51,7 @@ min-height: 48px;
 .bg-brand-green { background-color: #80BE43; }
 .text-brand-green { color: #80BE43; }
 
-/* Custom SVG Icon Helper Styles - Standardized size & flex alignment */
+/* Custom SVG Icon Helper Styles */
 .nav-icon-svg {
 width: 1.125rem;
 height: 1.125rem;
@@ -60,7 +59,7 @@ fill: currentColor;
 display: block;
 }
 
-/* Custom Scrollbars */
+/* Scrollbar Customization */
 ::-webkit-scrollbar {
 width: 4px;
 }
@@ -69,7 +68,7 @@ background: rgba(116, 20, 220, 0.2);
 border-radius: 4px;
 }
 
-/* Smooth Slide Animations */
+/* Slide Up Modal Animations */
 @keyframes slideUp {
 from {
 transform: translateY(100%);
@@ -83,4 +82,24 @@ opacity: 1;
 
 .animate-slide-up {
 animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Thermal Printer Formatter Rules */
+@media print {
+body * {
+visibility: hidden;
+}
+#cart-modal, #cart-modal * {
+visibility: visible;
+}
+#cart-modal {
+position: absolute;
+left: 0;
+top: 0;
+width: 100%;
+background: white !important;
+}
+button, header, nav, #toast {
+display: none !important;
+}
 }
