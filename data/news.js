@@ -16,18 +16,20 @@
 
 export const NEWS = [
     {
-        date: "2026-11-01",
-        title: "New: Normal Woggles in 4 styles",
-        text: "Normal woggles are now available in Scout, Romdoul, Angkor and Red Cross styles. Just choose your color!",
+        date: "",
+        title: "How to order using Nimet Scout Shop website",
+        text: "Watch this short guide on placing custom woggle orders.",
         image: "",
-        titleKh: "",
-        textKh: "",
+        youtubeId: "gRcCgDYTLpE&t=5s", // Paste YouTube Video ID here
+        titleKh: "របៀបកុម្មង់តាមវេបសាយនិម្មិតស្កោតសប",
+        textKh: "ទស្សនាវីដេអូណែនាំខ្លីៗពីរបៀបកុម្មង់កន្លាស់ស្កោត។",
     },
     {
-        date: "2026-10-20",
+        date: "",
         title: "Welcome to Nimet Scout Shop",
-        text: "Order custom woggles with your name, plus pins, badges and more. Add items to your cart and copy the receipt to send us your order.",
+        text: "Order custom woggles with your name, plus pins, badges and more.",
         image: "",
+        youtubeId: "", // Leave blank if using image or text-only
         titleKh: "",
         textKh: "",
     },
