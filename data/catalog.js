@@ -47,7 +47,7 @@ export const SETTINGS = {
     // If printing works on the iPhone, you can try a bigger chunkBytes for ios (for example 60, then 100)
     // to make it faster. If the printer beeps and disconnects again, go back to 20.
     PRINT: {
-        debug: true,           // true = show a small print log on the screen (set false when printing works)
+        debug: false,           // true = show a small print log on the screen (set false when printing works)
         testOnly: false,       // true = print only a short test text instead of the receipt
         keepConnected: false,  // false = disconnect after printing, so the WePrint app can use the printer
         connectDelayMs: 600,   // short wait after connecting, before sending anything
