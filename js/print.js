@@ -7,18 +7,18 @@ import { t } from './i18n.js';
 import { SETTINGS } from '../data/catalog.js';
 
 // ---------- Settings ----------
-const PRINTER_DOTS = SETTINGS.PRINTER_DOTS || 384;  // 384 = 58 mm paper, 576 = 80 mm paper[cite: 1]
+const PRINTER_DOTS = SETTINGS.PRINTER_DOTS || 384;  // 384 = 58 mm paper, 576 = 80 mm paper
 const DESIGN_WIDTH = 480;       // layout width in design units
 const SIDE_PAD = 14;            // side margin in design units
 const BLACK_BELOW = 165;        // gray level (0-255) below which a dot is printed
 
 const IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const USER = SETTINGS.PRINT || {};[cite: 1]
-const DEBUG = USER.debug !== false;[cite: 1]
-const TEST_ONLY = !!USER.testOnly;[cite: 1]
-const KEEP_CONNECTED = !!USER.keepConnected;[cite: 1]
-const CONNECT_DELAY = USER.connectDelayMs ?? 600;[cite: 1]
-const PROFILE = { chunkBytes: 20, delayMs: 15, write: 'response', bandRows: 16, ...((IS_IOS ? USER.ios : USER.other) || {}) };[cite: 1]
+const USER = SETTINGS.PRINT || {};
+const DEBUG = USER.debug !== false;
+const TEST_ONLY = !!USER.testOnly;
+const KEEP_CONNECTED = !!USER.keepConnected;
+const CONNECT_DELAY = USER.connectDelayMs ?? 600;
+const PROFILE = { chunkBytes: 20, delayMs: 15, write: 'response', bandRows: 16, ...((IS_IOS ? USER.ios : USER.other) || {}) };
 const SAFEST = { chunkBytes: 20, delayMs: 15, write: 'response', bandRows: 16 };
 
 // Fallback Bluetooth services list
@@ -47,7 +47,7 @@ let logLines = [];
 let logBox = null;
 
 function ensureLogBox() {
-    if (!DEBUG || logBox) return;[cite: 1]
+    if (!DEBUG || logBox) return;
     logBox = document.createElement('div');
     logBox.id = 'print-log';
     logBox.className = 'fixed left-2 right-2 bottom-2 z-[70] rounded-xl bg-black/90 text-green-300 shadow-xl';
@@ -73,7 +73,7 @@ function ensureLogBox() {
 
 function startLog() {
     logLines = [];
-    if (!DEBUG) return;[cite: 1]
+    if (!DEBUG) return;
     ensureLogBox();
     logBox.style.display = 'block';
     document.getElementById('print-log-text').textContent = '';
@@ -84,7 +84,7 @@ function log(message) {
     const line = `${stamp} ${message}`;
     logLines.push(line);
     console.log('[print]', message);
-    if (!DEBUG || !logBox) return;[cite: 1]
+    if (!DEBUG || !logBox) return;
     const pre = document.getElementById('print-log-text');
     pre.textContent = logLines.join('\n');
     pre.scrollTop = pre.scrollHeight;
@@ -93,7 +93,7 @@ function log(message) {
 // ---------- 1. The receipt as black/white dots ----------
 async function renderReceiptDots() {
     await ensureReceiptFonts();
-    const canvas = drawReceipt(buildReceiptModel(), { outWidth: PRINTER_DOTS, widthUnits: DESIGN_WIDTH, padUnits: SIDE_PAD });[cite: 1, 2]
+    const canvas = drawReceipt(buildReceiptModel(), { outWidth: PRINTER_DOTS, widthUnits: DESIGN_WIDTH, padUnits: SIDE_PAD });
     const ctx = canvas.getContext('2d');
     const { width, height } = canvas;
     const image = ctx.getImageData(0, 0, width, height);
@@ -151,14 +151,14 @@ function describeProperties(props) {
 async function pickDevice() {
     if (device) return;
     log('opening the Bluetooth picker...');
-    device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: SERVICES });[cite: 2]
+    device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: SERVICES });
     log(`chosen: "${device.name || 'unnamed'}"`);
     device.addEventListener('gattserverdisconnected', () => log('!! printer DISCONNECTED (reported by Bluetooth)'));
 }
 
 // Connect and dynamically discover services (Fixes iPhone/Bluefy connection freeze)
 async function openLink(connectDelayMs) {
-    notify(t('print_connecting'));[cite: 2]
+    notify(t('print_connecting'));
     log('connecting...');
     const server = await device.gatt.connect();
     log(`connected. waiting ${connectDelayMs} ms before sending...`);
@@ -239,7 +239,7 @@ async function sendBytes(characteristic, bytes, cfg) {
         const percent = Math.floor(sent * 100 / bytes.length);
         if (percent >= nextReport) {
             log(`sent ${sent} / ${bytes.length} bytes (${percent}%)`);
-            notify(`${t('print_printing')} ${percent}%`);[cite: 2]
+            notify(`${t('print_printing')} ${percent}%`);
             nextReport += 10;
         }
     }
@@ -250,12 +250,12 @@ async function sendBytes(characteristic, bytes, cfg) {
 async function printOverBluetooth() {
     startLog();
     log(`start | ${IS_IOS ? 'iPhone/iPad' : 'other device'} profile | ${navigator.userAgent.slice(0, 70)}`);
-    log(`settings: ${JSON.stringify(PROFILE)} | connect delay ${CONNECT_DELAY} ms | test only: ${TEST_ONLY}`);[cite: 1]
+    log(`settings: ${JSON.stringify(PROFILE)} | connect delay ${CONNECT_DELAY} ms | test only: ${TEST_ONLY}`);
 
     await pickDevice();
 
     let bytes;
-    if (TEST_ONLY) {[cite: 1]
+    if (TEST_ONLY) {
         bytes = buildTestBytes();
         log(`test job: ${bytes.length} bytes`);
     } else {
@@ -265,7 +265,7 @@ async function printOverBluetooth() {
     }
 
     try {
-        let characteristic = await openLink(CONNECT_DELAY);[cite: 1]
+        let characteristic = await openLink(CONNECT_DELAY);
         try {
             await sendBytes(characteristic, bytes, PROFILE);
         } catch (err) {
@@ -273,13 +273,13 @@ async function printOverBluetooth() {
             log(`!! ${err.message}`);
             log('retrying once with the slowest, gentlest settings...');
             await sleep(1500);
-            characteristic = await openLink(CONNECT_DELAY + 900);[cite: 1]
+            characteristic = await openLink(CONNECT_DELAY + 900);
             await sendBytes(characteristic, bytes, SAFEST);
         }
-        notify(t('print_done'));[cite: 2]
+        notify(t('print_done'));
         log('DONE');
     } finally {
-        if (!KEEP_CONNECTED) {[cite: 1]
+        if (!KEEP_CONNECTED) {
             try { device.gatt.disconnect(); log('disconnected from the printer'); } catch (e) {}
         }
     }
@@ -303,7 +303,7 @@ async function shareReceiptImage() {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 10000);
-    notify(t('print_image_saved'));[cite: 2]
+    notify(t('print_image_saved'));
 }
 
 // ---------- 5. The Print button listener ----------
@@ -311,18 +311,18 @@ let busy = false;
 
 async function onPrintClick() {
     if (busy) return;
-    if (isCartEmpty()) { notify(t('toast_cart_empty')); return; }[cite: 2]
+    if (isCartEmpty()) { notify(t('toast_cart_empty')); return; }
     busy = true;
     try {
         if ('bluetooth' in navigator) await printOverBluetooth();
         else await shareReceiptImage();
     } catch (err) {
         if (err && (err.name === 'AbortError' || err.name === 'NotFoundError')) {
-            if (err.name === 'NotFoundError') { log('no printer chosen'); notify(t('print_no_printer')); }[cite: 2]
+            if (err.name === 'NotFoundError') { log('no printer chosen'); notify(t('print_no_printer')); }
         } else {
             console.error('Print error:', err);
             log(`!! FAILED: ${(err && err.message) || err}`);
-            notify(t('print_failed', { reason: (err && err.message) || 'unknown' }));[cite: 2]
+            notify(t('print_failed', { reason: (err && err.message) || 'unknown' }));
         }
     } finally {
         busy = false;
