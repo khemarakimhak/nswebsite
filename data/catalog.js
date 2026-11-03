@@ -51,8 +51,8 @@ export const SETTINGS = {
         testOnly: false,       // true = print only a short test text instead of the receipt
         keepConnected: false,  // false = disconnect after printing, so the WePrint app can use the printer
         connectDelayMs: 600,   // short wait after connecting, before sending anything
-        ios:   { chunkBytes: 20,  delayMs: 15,  write: "response",   bandRows: 16 },
-        other: { chunkBytes: 150, delayMs: 20, write: "noresponse", bandRows: 96 },
+        ios:   { chunkBytes: 20,  delayMs: 5,  write: "response",   bandRows: 32 },
+        other: { chunkBytes: 100, delayMs: 20, write: "noresponse", bandRows: 96 },
         //   chunkBytes = bytes sent per Bluetooth write      delayMs = pause after each write
         //   write      = "response" (printer confirms each write) or "noresponse" (faster, no confirmation)
         //   bandRows   = picture rows per print command (smaller = gentler on small printer buffers)
