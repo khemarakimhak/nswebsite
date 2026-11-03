@@ -20,15 +20,15 @@
 
 export const NEWS = [
     // Example post with a YouTube video (remove the two // at the start of each line to use it):
-    // {
-    //     date: "2026-11-03",
-    //     title: "Watch our new video",
-    //     text: "Short description of the video.",
-    //     image: "",
-    //     youtube: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    //     titleKh: "",
-    //     textKh: "",
-    // },
+    {
+        date: "2026-11-03",
+        title: "Watch our new video",
+        text: "Short description of the video.",
+        image: "",
+        youtube: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        titleKh: "",
+        textKh: "",
+    },
 
     {
         date: "2026-11-01",

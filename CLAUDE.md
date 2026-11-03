@@ -135,21 +135,34 @@ assets/                 pictures, one folder per section (see below)
 
 `js/print.js` + the small "Print" button next to "Export PDF" in the cart. It is self-contained: to remove it, delete
 `js/print.js`, the `<button id="print-btn">` in `index.html`, and the `import './print.js';` line in `js/app.js`
-(plus the `cart_print` / `print_*` keys in `translations.js` and `PRINTER_DOTS` in `catalog.js` if wanted).
+(plus the `cart_print` / `print_*` keys in `translations.js` and `SETTINGS.PRINTER_DOTS` / `SETTINGS.PRINT` in `catalog.js` if wanted).
 
 - The printer is a Detonger P1 (58 mm paper). It cannot pair with an iPhone in Settings; the maker's app is WePrint.
   The maker's SDK (Dothantech **LPAPI**, a compiled native iOS library) is NOT usable from a website. From its binary we only know
   it talks Bluetooth Low Energy through these GATT services: `FFE0` (char `FFE1`), `18F0`, `49535343-FE7D-4AE5-8FA9-9FAFD205E455`,
-  `E7810A71-73AE-499D-8C15-FAA9AEF0C3F2`, and wraps data in its own packet layer. Whether the P1 also accepts plain ESC/POS is unconfirmed.
+  `E7810A71-73AE-499D-8C15-FAA9AEF0C3F2`. Confirmed by the owner: on a Mac with Chrome the P1 accepts plain ESC/POS raster
+  printing with 100-byte writes, so the data and protocol are fine.
 - Two paths, chosen automatically in `onPrintClick()`:
-  1. `navigator.bluetooth` exists (Bluefy on iPhone, Chrome on Android/PC): connect over BLE (device picker lists all devices),
-     find the first writable characteristic in the services above, send an ESC/POS raster image (`GS v 0`) in 100-byte chunks.
-  2. No Web Bluetooth (normal iPhone Safari): share sheet with a black/white PNG (`nimet-receipt.png`) so it can be sent to WePrint;
-     if sharing is unavailable the PNG is downloaded instead.
+  1. `navigator.bluetooth` exists (Bluefy on iPhone, Chrome on Mac/PC/Android): connect over BLE (picker lists all devices),
+     find the first writable characteristic in the services above, send an ESC/POS raster image (`GS v 0`).
+  2. No Web Bluetooth (iPhone Safari / Chrome): share sheet with a black/white PNG (`nimet-receipt.png`), otherwise the PNG is
+     downloaded. WePrint does NOT appear in the iPhone share sheet (it does not register as a share target), so this path only saves the image.
+- **iPhone problem and the safe-sending fix:** with Bluefy the P1 beeped and disconnected while the receipt was being sent
+  (the old error was "null is not an object ... writeValueWithoutResponse" because the code dropped its characteristic on disconnect).
+  Likely causes: writes too big for the iPhone link, no pause or flow control, unconfirmed writes. So the code now has two profiles in
+  `SETTINGS.PRINT` (`data/catalog.js`): `ios` (iPhone/iPad: 20-byte confirmed writes, 32-row bands) and `other` (Mac/PC/Android: 100-byte
+  unconfirmed writes, the combination that worked). It also waits after connecting (`connectDelayMs`), checks the connection before every
+  write, reports "printer disconnected after X of Y bytes", reconnects and retries ONCE with the slowest settings, and disconnects after
+  printing (`keepConnected: false`) so WePrint can use the printer.
+- **On-screen log:** `SETTINGS.PRINT.debug: true` shows a small "Print log" box (Copy / Close buttons) with the device, services,
+  characteristic properties, write size and progress. Turn it off (`debug: false`) once printing works. `testOnly: true` prints only
+  a short test text, to separate "cannot connect" from "cannot send the big picture".
+- Speed: at 20 bytes per write a receipt (about 40 KB) takes roughly 40-90 s on an iPhone. After it works, raise
+  `ios.chunkBytes` step by step (60, 100, 180) until it breaks, then go back one step.
 - The receipt is the same Khmer receipt as the PDF, drawn by `drawReceipt()` in `js/pdf.js` at the printer width
   (`SETTINGS.PRINTER_DOTS`: 384 for 58 mm, 576 for 80 mm; layout width 480 design units so text is about 22 dots high).
-- Verified only with a mock Bluetooth printer (bytes decode to the correct 384-dot image). Not yet confirmed on the real P1.
-  If direct Bluetooth printing does not work on the real printer, remove path 1 or the whole feature rather than reverse-engineering LPAPI.
+- Verified with a mock Bluetooth printer (normal, dropping the link once, always dropping, tiny-write-only, no confirmed writes).
+  Not yet confirmed on the real P1 with an iPhone. If it still does not work, copy the print log, and consider removing the feature.
 
 ## Pictures
 
