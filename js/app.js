@@ -23,6 +23,8 @@ import {
     isCartEmpty,
     getReceiver,
     setReceiverField,
+    receiverHasData,
+    clearReceiverState,
     setDeliveryMethod,
     setDeliveryFee,
     setSource,
@@ -43,6 +45,7 @@ import {
     deleteSavedOrder,
     summarizeSaved,
     hasUnsavedItems,
+    hasUnsavedOrder,
     sameName
 } from './saved-orders.js';
 
@@ -148,6 +151,24 @@ function formatNewsDate(dateStr) {
     }
 }
 
+// Video ID from any YouTube link (watch?v=, youtu.be/, shorts/, live/, embed/) or from the bare 11-character ID
+export function youtubeId(input) {
+    const text = String(input || '').trim();
+    if (/^[\w-]{11}$/.test(text)) return text;
+    try {
+        const url = new URL(text);
+        const host = url.hostname.replace(/^www\./, '');
+        if (host === 'youtu.be') return url.pathname.slice(1).split('/')[0].slice(0, 11);
+        if (host.endsWith('youtube.com') || host.endsWith('youtube-nocookie.com')) {
+            const v = url.searchParams.get('v');
+            if (v) return v.slice(0, 11);
+            const match = url.pathname.match(/\/(?:embed|shorts|live|v)\/([\w-]{11})/);
+            if (match) return match[1];
+        }
+    } catch (e) { /* not a link */ }
+    return '';
+}
+
 function renderNews() {
     const container = document.getElementById('news-feed');
     if (!container) return;
@@ -164,10 +185,14 @@ function renderNews() {
         const title = escapeHTML((useKh && post.titleKh) || post.title || '');
         const text = escapeHTML((useKh && post.textKh) || post.text || '');
         const img = post.image ? imgPath(post.image, 'news') : '';
+        const videoId = youtubeId(post.youtube);
 
         return `
         <article class="bg-white rounded-3xl border border-purple-100 shadow-sm overflow-hidden">
-            ${img ? `<img src="${img}" alt="${title}" loading="lazy" class="w-full aspect-video object-cover" onerror="this.style.display='none'" />` : ''}
+            ${videoId
+                // YouTube's own player: it shows the video thumbnail with YouTube's own play button
+                ? `<div class="w-full aspect-video bg-black"><iframe class="w-full h-full" src="https://www.youtube-nocookie.com/embed/${videoId}" title="${title}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>`
+                : (img ? `<img src="${img}" alt="${title}" loading="lazy" class="w-full aspect-video object-cover" onerror="this.style.display='none'" />` : '')}
             <div class="p-4">
                 <p class="text-[10px] font-bold text-[#7414DC] uppercase tracking-wider mb-1">${escapeHTML(formatNewsDate(post.date))}</p>
                 <h3 class="font-black text-sm text-gray-900 leading-snug mb-1">${title}</h3>
@@ -470,6 +495,39 @@ function renderSource() {
 function refreshReceiptText() {
     const receiptEl = document.getElementById('receipt-formatted-output');
     if (receiptEl) receiptEl.innerText = generateFormattedReceipt();
+}
+
+// A small question with 1-3 buttons. Resolves with the value of the tapped button ('cancel' when dismissed).
+function askChoice(message, buttons) {
+    return new Promise(resolve => {
+        const modal = document.getElementById('choice-modal');
+        const messageEl = document.getElementById('choice-message');
+        const buttonsEl = document.getElementById('choice-buttons');
+        if (!modal || !messageEl || !buttonsEl) { resolve('cancel'); return; }
+
+        const tones = {
+            primary: 'bg-[#7414DC] text-white',
+            danger: 'bg-rose-100 text-rose-700',
+            neutral: 'bg-gray-100 text-gray-700'
+        };
+        messageEl.textContent = message;
+        buttonsEl.innerHTML = buttons.map((b, i) =>
+            `<button type="button" data-choice="${i}" class="w-full py-3 rounded-xl text-sm font-bold active:scale-[0.98] transition-all ${tones[b.tone] || tones.neutral}">${escapeHTML(b.label)}</button>`
+        ).join('');
+
+        const finish = (value) => {
+            modal.classList.add('hidden');
+            modal.removeEventListener('click', onClick);
+            resolve(value);
+        };
+        const onClick = (e) => {
+            const btn = e.target.closest('[data-choice]');
+            if (btn) finish(buttons[Number(btn.getAttribute('data-choice'))].value);
+            else if (e.target === modal) finish('cancel');      // tapped the dark background
+        };
+        modal.addEventListener('click', onClick);
+        modal.classList.remove('hidden');
+    });
 }
 
 function downloadBlob(blob, filename) {
@@ -820,9 +878,30 @@ window.addEventListener('DOMContentLoaded', () => {
     // Clear cart
     const clearBtn = document.getElementById('btn-clear-cart');
     if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
+        clearBtn.addEventListener('click', async () => {
+            // Something on screen that is not saved yet? Ask first.
+            if (hasUnsavedOrder()) {
+                const choice = await askChoice(t('clear_unsaved_message'), [
+                    { value: 'save', label: t('clear_save'), tone: 'primary' },
+                    { value: 'discard', label: t('clear_discard'), tone: 'danger' },
+                    { value: 'cancel', label: t('clear_cancel'), tone: 'neutral' }
+                ]);
+                if (choice === 'cancel') return;
+                if (choice === 'save') {
+                    const result = saveCurrentOrder();
+                    if (!result.ok) {                       // a name is needed to save
+                        showToast(t('toast_need_name'));
+                        document.getElementById('receiver-name')?.focus();
+                        return;
+                    }
+                }
+            }
+            // Clear the cart AND the customer details
             clearCartState();
+            clearReceiverState();
+            fillReceiverForm();
             updateCartStateUI();
+            renderSavedList();
             showToast(t('toast_cleared'));
         });
     }

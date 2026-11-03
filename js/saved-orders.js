@@ -4,7 +4,7 @@
 // Everything stays in this browser only; nothing is sent anywhere.
 
 import { WOGGLE_PRODUCTS, SHOP_PRODUCTS, PIN_PRODUCTS, BADGE_PRODUCTS } from './products.js';
-import { getSnapshot, restoreSnapshot, getReceiver, isCartEmpty, deliveryFeeFor } from './cart.js';
+import { getSnapshot, restoreSnapshot, getReceiver, isCartEmpty, deliveryFeeFor, receiverHasData } from './cart.js';
 
 const SAVED_KEY = 'nimet_scout_saved_orders';
 let saved = [];
@@ -81,6 +81,14 @@ function stable(value) {
 // True when the cart has items that are not stored in any saved order (loading another order would lose them)
 export function hasUnsavedItems() {
     if (isCartEmpty()) return false;
+    const now = stable(getSnapshot());
+    return !saved.some(e => stable({ cart: e.cart, receiver: e.receiver }) === now);
+}
+
+// True when there is a customer or cart on screen that is not stored in any saved order
+// (used before clearing, so nothing is lost by accident)
+export function hasUnsavedOrder() {
+    if (isCartEmpty() && !receiverHasData(getReceiver())) return false;
     const now = stable(getSnapshot());
     return !saved.some(e => stable({ cart: e.cart, receiver: e.receiver }) === now);
 }

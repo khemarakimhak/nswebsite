@@ -91,6 +91,13 @@ assets/                 pictures, one folder per section (see below)
   drawn with `currentColor` so it follows the active/inactive and option colors. Pin and badge icons are unchanged.
   The store logo's "Scout Shop" text is live text; its font was changed from GT Planar (not available on the web) to a
   bold sans-serif. For the exact brand font, export the logo with text converted to outlines.
+- **Clear Cart:** clears the items AND the customer details (name, source, phone, address, delivery). If the customer/cart on
+  screen is not identical to a saved order (`hasUnsavedOrder()` in `js/saved-orders.js`, also true when only customer details were
+  typed), a small dialog asks Save / Discard / Cancel (`askChoice()` in `js/app.js`, markup `#choice-modal`). Save needs a customer
+  name (otherwise it shows a hint and keeps everything); a customer/cart that matches a saved order is cleared without asking.
+- **News videos:** a post in `data/news.js` can have `youtube: "<any YouTube link>"` (watch, youtu.be, shorts, live, embed or the bare ID).
+  It renders YouTube's own embedded player (`youtube-nocookie.com/embed/<id>`, lazy loaded), which already shows YouTube's
+  thumbnail and play button, so there is no custom play button. A video replaces the post's `image`; an unreadable link is ignored.
 - **Receipt text:** `generateFormattedReceipt()` follows the current language and currency.
 - **PDF:** always Khmer and riel, whatever the site language. Width 55 mm, length grows with the items.
   The Export PDF button is intentionally small and faint (owner tool, so customers do not tap it by accident);
@@ -112,6 +119,10 @@ assets/                 pictures, one folder per section (see below)
   non-color option names in `OPTION_TRANSLATIONS`, woggle style Khmer names as `nameKh` on each style.
 - **Khmer font:** K5 (`css/k5.woff2`) is restricted to Khmer code points with `unicode-range`; English keeps the system font.
   K5 has one weight, so `font-weight: 100 900` is declared to avoid fake bold.
+- **Never use `ctx.textAlign = 'center' | 'right'` when drawing the receipt (`drawReceipt()` in `js/pdf.js`).** iPhone Safari
+  mis-places aligned canvas text that contains Khmer (it starts at the edge, so centered lines start mid-page and right-aligned
+  amounts run off the paper; PC browsers are fine). Every text is drawn left-aligned at an x computed from `measureText`. The
+  fonts are also warmed up on a canvas first (`ensureReceiptFonts()`). Both the PDF and the print image use this code.
 - **PDF receipt layout (do not reorder):** `Nimet Scout Shop` (English) -> Khmer shop name -> receiver name -> line ->
   sender phone (`SETTINGS.SENDER_PHONE`, 070 90 98 96) -> receiver phone -> address -> delivery method -> line ->
   items -> delivery fee row (only if > 0) -> total -> Khmer footer.

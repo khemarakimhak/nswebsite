@@ -19,7 +19,7 @@
 //  3. Keep the commas and quotes exactly as in the other lines.
 //
 //  ITEMS WITH A CHOICE MENU (colors, classes...): add  options: [ ... ]  to the
-//  line and the "+" button opens a menu with a square picture on top.
+//  line and tapping the item opens a menu with a square picture on top.
 //     main picture   = image: "rank-badge.jpg"
 //     picture of each choice = the same section folder, named
 //         <item name>-<choice>.jpg   all lowercase, spaces become "-"

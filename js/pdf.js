@@ -76,6 +76,16 @@ function wrapText(ctx, text, maxWidth) {
     return out.length ? out : [''];
 }
 
+// Width of a text in the current font. If a browser reports 0 for real text, estimate it so nothing is misplaced.
+function measuredWidth(ctx, str, font) {
+    const width = ctx.measureText(str).width;
+    if (str.trim() && !(width > 0)) {
+        const size = parseFloat((font.match(/(\d+(?:\.\d+)?)px/) || [0, 16])[1]);
+        return str.length * size * 0.6;
+    }
+    return width;
+}
+
 // ---------- 3. Layout + drawing ----------
 // Every size below is in "design units" (1 unit = 1 px of the 300 dpi PDF page).
 // outWidth / widthUnits scales the whole design, so the same receipt can also be drawn
@@ -161,6 +171,10 @@ export function drawReceipt(model, { outWidth = WIDTH_PX, widthUnits = WIDTH_PX,
     ctx.fillStyle = '#000';
     ctx.textBaseline = 'alphabetic';
 
+    // IMPORTANT: every text is drawn LEFT-aligned at an x we work out ourselves from its measured width.
+    // iPhone Safari mis-places canvas text that uses textAlign "center" / "right" when it contains Khmer
+    // (it starts at the edge and runs off the paper), so never use ctx.textAlign here.
+    ctx.textAlign = 'left';
     ops.forEach(op => {
         if (op.kind === 'line') {
             ctx.strokeStyle = '#000';
@@ -172,8 +186,13 @@ export function drawReceipt(model, { outWidth = WIDTH_PX, widthUnits = WIDTH_PX,
             ctx.stroke();
         } else {
             ctx.font = op.font;
-            ctx.textAlign = op.align;
-            const x = op.align === 'center' ? outWidth / 2 : op.align === 'right' ? outWidth - pad : pad;
+            let x = pad;
+            if (op.align !== 'left') {
+                const width = measuredWidth(ctx, op.str, op.font);
+                x = op.align === 'center' ? (outWidth - width) / 2 : outWidth - pad - width;
+                x = Math.max(pad, Math.min(x, outWidth - pad - width));   // always stay on the paper
+                if (!(x >= pad)) x = pad;
+            }
             ctx.fillText(op.str, x, op.y);
         }
     });
@@ -247,12 +266,25 @@ export async function canvasToPdf(canvas, { forceJpeg = false } = {}) {
 
 // ---------- 5. Public: build the PDF file ----------
 // Make sure the Khmer font is ready before drawing
+let fontsWarmedUp = false;
 export async function ensureReceiptFonts() {
     if (document.fonts && document.fonts.load) {
         try {
             await document.fonts.load(`28px K5`, 'ក');
             await document.fonts.load(`bold 28px K5`, 'ក');
+            await document.fonts.ready;
         } catch (e) { /* use the fallback font */ }
+    }
+    if (!fontsWarmedUp) {
+        // Use the font once on a canvas and give the browser a moment, so the first real measurement is right
+        const warm = document.createElement('canvas').getContext('2d');
+        ['28px', 'bold 28px'].forEach(size => {
+            warm.font = `${size} ${FONT}`;
+            warm.fillText('និម្មិត ហាងលក់ 0123 ៛', 0, 30);
+            warm.measureText('សូមអរគុណ');
+        });
+        await new Promise(resolve => setTimeout(resolve, 80));
+        fontsWarmedUp = true;
     }
 }
 

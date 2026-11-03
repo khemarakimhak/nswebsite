@@ -79,8 +79,8 @@ export const TRANSLATIONS = {
     cart_clear:          { en: "Clear Cart",                            kh: "សម្អាតកន្ត្រក" },
 
     // ----- Cart: receiver details -----
-    cart_receiver_title:   { en: "Receiver Details",                    kh: "ព័ត៌មានអ្នកទទួល" },
-    cart_receiver_name:    { en: "Receiver Name",                       kh: "ឈ្មោះអ្នកទទួល" },
+    cart_receiver_title:   { en: "Customer Details",                    kh: "ព័ត៌មានភ្ញៀវ" },
+    cart_receiver_name:    { en: "Customer Name",                       kh: "ឈ្មោះភ្ញៀវ" },
     cart_receiver_phone:   { en: "Receiver Phone Number",               kh: "លេខទូរស័ព្ទអ្នកទទួល" },
     cart_receiver_address: { en: "Receiver Address",                    kh: "អាសយដ្ឋានអ្នកទទួល" },
     cart_delivery_title:   { en: "Delivery Method",                     kh: "វិធីសាស្ត្រដឹកជញ្ជូន" },
@@ -102,6 +102,11 @@ export const TRANSLATIONS = {
     saved_save:            { en: "Save current",                        kh: "រក្សាទុក" },
     saved_empty:           { en: "No saved orders yet.",                kh: "មិនទាន់មានការបញ្ជាទិញដែលបានរក្សាទុកទេ។" },
     saved_items:           { en: "{count} items",                       kh: "{count} មុខ" },
+    // Asked when "Clear Cart" is tapped and the customer / cart is not saved yet
+    clear_unsaved_message: { en: "This customer and cart are not saved yet. Save before clearing?", kh: "អតិថិជន និងកន្ត្រកនេះមិនទាន់បានរក្សាទុកទេ។ រក្សាទុកមុនសម្អាតឬទេ?" },
+    clear_save:            { en: "Save",                                kh: "រក្សាទុក" },
+    clear_discard:         { en: "Discard",                             kh: "មិនរក្សាទុក" },
+    clear_cancel:          { en: "Cancel",                              kh: "បោះបង់" },
     toast_saved:           { en: "Order saved!",                        kh: "បានរក្សាទុក!" },
     toast_saved_updated:   { en: "Saved order updated!",                kh: "បានធ្វើបច្ចុប្បន្នភាព!" },
     toast_need_name:       { en: "Enter the receiver name first",       kh: "សូមបញ្ចូលឈ្មោះអ្នកទទួលជាមុនសិន" },

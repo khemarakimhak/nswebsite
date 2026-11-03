@@ -27,6 +27,18 @@ function saveReceiver() {
     }
 }
 
+// True when any customer detail has been filled in
+export function receiverHasData(rec = receiver) {
+    return !!(String(rec.name || '').trim() || String(rec.phone || '').trim() || String(rec.address || '').trim()
+        || rec.source || rec.delivery);
+}
+
+// Empty every customer detail (name, source, phone, address, delivery)
+export function clearReceiverState() {
+    receiver = { name: '', source: '', phone: '', address: '', delivery: '', deliverySub: '' };
+    saveReceiver();
+}
+
 export function setReceiverField(field, value) {
     if (!(field in receiver)) return;
     receiver[field] = value;
