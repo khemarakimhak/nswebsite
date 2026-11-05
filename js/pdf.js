@@ -4,7 +4,7 @@
 // there, then the picture is wrapped in a one-page PDF. No library needed.
 // The PDF is ALWAYS in Khmer (and riel), whatever language the website is showing.
 
-import { getReceiptItems, getCartTotal, getDeliveryRow, getReceiver, receiverDisplayName, receiverDeliveryText } from './cart.js';
+import { getReceiptItems, getCartTotal, getDeliveryRow, getReceiver, receiverDisplayName, receiverDeliveryText, withSnapshot } from './cart.js';
 import { formatPrice } from './currency.js';
 import { t, inLang } from './i18n.js';
 import { SETTINGS } from '../data/catalog.js';
@@ -288,9 +288,10 @@ export async function ensureReceiptFonts() {
     }
 }
 
-export async function createReceiptPdf() {
+export async function createReceiptPdf(snapshot = null) {
     await ensureReceiptFonts();
-    const canvas = drawReceipt(buildReceiptModel());
+    const model = snapshot ? withSnapshot(snapshot, buildReceiptModel) : buildReceiptModel();
+    const canvas = drawReceipt(model);
     const bytes = await canvasToPdf(canvas);
     return new Blob([bytes], { type: 'application/pdf' });
 }

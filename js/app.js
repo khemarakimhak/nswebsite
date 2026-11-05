@@ -38,16 +38,7 @@ import {
 
 import { createReceiptPdf } from './pdf.js';
 import './print.js';   // optional Bluetooth print feature (delete this line + js/print.js + the Print button to remove it)
-import {
-    listSaved,
-    saveCurrentOrder,
-    loadSavedOrder,
-    deleteSavedOrder,
-    summarizeSaved,
-    hasUnsavedItems,
-    hasUnsavedOrder,
-    sameName
-} from './saved-orders.js';
+import { createOrder, getCurrentUser } from './firebase.js';
 
 import { formatPrice } from './currency.js';
 import { DELIVERY } from '../data/catalog.js';
@@ -240,7 +231,6 @@ function refreshPrices() {
     renderNews();
     updateCartStateUI();
     renderDelivery();
-    renderSavedList();
     updateModalPrice();
     refreshModalText();
 }
@@ -541,49 +531,74 @@ function downloadBlob(blob, filename) {
     setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
-// ---------- Saved orders (customers and their carts) ----------
-function formatSavedDate(timestamp) {
-    try {
-        return new Date(timestamp).toLocaleString(currentLang === 'kh' ? 'km-KH' : 'en-GB',
-            { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-    } catch (e) {
-        return '';
+// ---------- Checkout ----------
+async function handleCheckout() {
+    if (isCartEmpty()) {
+        showToast(t('toast_cart_empty'));
+        return;
     }
-}
-
-function renderSavedList() {
-    const saved = listSaved();
-
-    const badge = document.getElementById('saved-count-badge');
-    if (badge) {
-        badge.innerText = saved.length;
-        badge.classList.toggle('hidden', saved.length === 0);
-        badge.classList.toggle('flex', saved.length > 0);
-    }
-
-    const list = document.getElementById('saved-list');
-    if (!list) return;
-
-    if (saved.length === 0) {
-        list.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-3">${escapeHTML(t('saved_empty'))}</p>`;
+    const receiver = getReceiver();
+    const name = (receiver.name || '').trim();
+    if (!name) {
+        showToast(t('toast_need_name'));
+        document.getElementById('receiver-name')?.focus();
         return;
     }
 
-    const currentName = getReceiver().name;
-    list.innerHTML = saved.map(entry => {
-        const { count, total } = summarizeSaved(entry);
-        const active = currentName.trim() && sameName(entry.name, currentName);
-        return `
-        <div class="flex items-center gap-2 rounded-xl border p-2 ${active ? 'bg-white border-[#7414DC]' : 'bg-white border-gray-200'}">
-            <button type="button" data-action="load-order" data-id="${entry.id}" class="flex-1 min-w-0 text-left active:opacity-70" style="min-height:0">
-                <p class="font-bold text-xs text-gray-900 truncate">${escapeHTML(entry.name)}${entry.receiver.source ? ` <span class="text-[#7414DC]">(${escapeHTML(sourceLabel(entry.receiver.source))})</span>` : ''}</p>
-                <p class="text-[10px] text-gray-500 truncate">${escapeHTML(t('saved_items', { count }))} • ${formatPrice(total)} • ${escapeHTML(formatSavedDate(entry.savedAt))}</p>
-            </button>
-            <button type="button" data-action="delete-order" data-id="${entry.id}" aria-label="Delete" class="w-9 h-9 shrink-0 text-rose-600 hover:bg-rose-100 rounded-lg flex items-center justify-center" style="min-height:0">
-                <i class="fa-solid fa-trash-can"></i>
-            </button>
-        </div>`;
-    }).join('');
+    const btn = document.getElementById('checkout-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Submitting...`;
+    }
+
+    try {
+        const cart = getCart();
+        const stdEntries = getValidStandardEntries();
+        const itemCount = stdEntries.reduce((sum, e) => sum + e.qty, 0)
+            + cart.customWoggles.reduce((sum, w) => sum + (w.qty || 1), 0);
+        const totalUsd = getCartTotal();
+
+        const currentUser = getCurrentUser();
+        const orderData = {
+            name,
+            phone: receiver.phone || '',
+            address: receiver.address || '',
+            source: receiver.source || '',
+            receiver: { ...receiver, name },
+            cart: JSON.parse(JSON.stringify(cart)),
+            itemCount,
+            totalUsd,
+            status: 'new',
+            userId: currentUser ? currentUser.uid : null,
+            customerUid: currentUser ? currentUser.uid : null,
+            searchText: `${name} ${receiver.phone || ''}`.toLowerCase()
+        };
+
+        await createOrder(orderData);
+
+        // Copy receipt as convenience
+        try {
+            const text = generateFormattedReceipt();
+            await navigator.clipboard.writeText(text);
+        } catch (_) {}
+
+        // Clear cart
+        clearCartState();
+        clearReceiverState();
+        fillReceiverForm();
+        updateCartStateUI();
+        window.toggleCartModal(false);
+
+        showToast('Order sent to Admin successfully!');
+    } catch (err) {
+        console.error('Checkout failed:', err);
+        showToast(`Checkout failed: ${err.message || 'Please check connection'}`);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span data-i18n="cart_checkout">Check Out</span>`;
+        }
+    }
 }
 
 // ---------- Cart ----------
@@ -683,7 +698,6 @@ window.addEventListener('DOMContentLoaded', () => {
     applyStaticTranslations();
     loadCartFromStorage();
     fillReceiverForm();
-    renderSavedList();
     renderAllGrids();
     renderNews();
     updateCartStateUI();
@@ -715,36 +729,6 @@ window.addEventListener('DOMContentLoaded', () => {
             if (input) { input.value = ''; input.focus(); }
             renderSection(section);
             updateClearButton(section);
-        } else if (action === 'toggle-saved') {
-            document.getElementById('saved-panel')?.classList.toggle('hidden');
-            renderSavedList();
-        } else if (action === 'save-order') {
-            const result = saveCurrentOrder();
-            if (!result.ok) {
-                showToast(t('toast_need_name'));
-                document.getElementById('receiver-name')?.focus();
-            } else {
-                renderSavedList();
-                showToast(t(result.updated ? 'toast_saved_updated' : 'toast_saved'));
-            }
-        } else if (action === 'load-order') {
-            const entry = listSaved().find(e => e.id === target.getAttribute('data-id'));
-            if (!entry) return;
-            if (hasUnsavedItems() && !confirm(t('confirm_replace_cart', { name: entry.name }))) return;
-            loadSavedOrder(entry.id);
-            fillReceiverForm();
-            updateCartStateUI();
-            renderSavedList();
-            const scroller = document.querySelector('#cart-modal .overflow-y-auto');
-            if (scroller) scroller.scrollTop = 0;
-            showToast(t('toast_loaded', { name: entry.name }));
-        } else if (action === 'delete-order') {
-            const entry = listSaved().find(e => e.id === target.getAttribute('data-id'));
-            if (!entry) return;
-            if (!confirm(t('confirm_delete_saved', { name: entry.name }))) return;
-            deleteSavedOrder(entry.id);
-            renderSavedList();
-            showToast(t('toast_deleted'));
         } else if (action === 'select-source') {
             setSource(target.getAttribute('data-value'));
             renderSource();
@@ -780,7 +764,6 @@ window.addEventListener('DOMContentLoaded', () => {
         if (!field) return;
         setReceiverField(field.getAttribute('data-receiver'), field.value);
         refreshReceiptText();
-        if (field.getAttribute('data-receiver') === 'name') renderSavedList();
     });
 
     // Keyboard: Enter or Space on a product card opens it
@@ -851,6 +834,9 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Checkout (sends order directly to Firebase admin without needing customer account)
+    document.getElementById('checkout-btn')?.addEventListener('click', handleCheckout);
+
     // Export the receipt as a PDF for the 55 mm thermal printer
     const pdfBtn = document.getElementById('export-pdf-btn');
     if (pdfBtn) {
@@ -878,30 +864,12 @@ window.addEventListener('DOMContentLoaded', () => {
     // Clear cart
     const clearBtn = document.getElementById('btn-clear-cart');
     if (clearBtn) {
-        clearBtn.addEventListener('click', async () => {
-            // Something on screen that is not saved yet? Ask first.
-            if (hasUnsavedOrder()) {
-                const choice = await askChoice(t('clear_unsaved_message'), [
-                    { value: 'save', label: t('clear_save'), tone: 'primary' },
-                    { value: 'discard', label: t('clear_discard'), tone: 'danger' },
-                    { value: 'cancel', label: t('clear_cancel'), tone: 'neutral' }
-                ]);
-                if (choice === 'cancel') return;
-                if (choice === 'save') {
-                    const result = saveCurrentOrder();
-                    if (!result.ok) {                       // a name is needed to save
-                        showToast(t('toast_need_name'));
-                        document.getElementById('receiver-name')?.focus();
-                        return;
-                    }
-                }
-            }
+        clearBtn.addEventListener('click', () => {
             // Clear the cart AND the customer details
             clearCartState();
             clearReceiverState();
             fillReceiverForm();
             updateCartStateUI();
-            renderSavedList();
             showToast(t('toast_cleared'));
         });
     }

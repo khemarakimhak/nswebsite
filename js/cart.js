@@ -287,6 +287,31 @@ export function getCartTotal() {
     return getItemsTotal() + (row ? row.amount : 0);
 }
 
+// Total count of physical items in the cart
+export function getItemCount() {
+    const stdCount = getValidStandardEntries().reduce((sum, e) => sum + e.qty, 0);
+    const customCount = cart.customWoggles.reduce((sum, w) => sum + (w.qty || 1), 0);
+    return stdCount + customCount;
+}
+
+// Run a calculation using a saved snapshot instead of the current active cart
+export function withSnapshot(snapshot, fn) {
+    if (!snapshot) return fn();
+    const prevCart = cart;
+    const prevReceiver = receiver;
+    try {
+        cart = {
+            standardItems: snapshot.cart?.standardItems || {},
+            customWoggles: (snapshot.cart?.customWoggles || []).map(w => ({ ...w, qty: w.qty || 1 }))
+        };
+        receiver = { name: '', source: '', phone: '', address: '', delivery: '', deliverySub: '', ...(snapshot.receiver || {}) };
+        return fn();
+    } finally {
+        cart = prevCart;
+        receiver = prevReceiver;
+    }
+}
+
 // Text receipt (shown in the cart and copied). Uses the current language and currency.
 export function generateFormattedReceipt() {
     if (isCartEmpty()) {

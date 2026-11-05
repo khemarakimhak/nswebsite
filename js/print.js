@@ -15,7 +15,7 @@
 // The receipt is the same one as the PDF (always Khmer, riel), drawn at the printer's width.
 // Speed / safety settings are in data/catalog.js  ->  SETTINGS.PRINT
 
-import { isCartEmpty } from './cart.js';
+import { isCartEmpty, withSnapshot } from './cart.js';
 import { buildReceiptModel, drawReceipt, ensureReceiptFonts } from './pdf.js';
 import { t } from './i18n.js';
 import { SETTINGS } from '../data/catalog.js';
@@ -106,9 +106,10 @@ function log(message) {
 }
 
 // ---------- 1. The receipt as black/white dots ----------
-async function renderReceiptDots() {
+export async function renderReceiptDots(snapshot = null) {
     await ensureReceiptFonts();
-    const canvas = drawReceipt(buildReceiptModel(), { outWidth: PRINTER_DOTS, widthUnits: DESIGN_WIDTH, padUnits: SIDE_PAD });
+    const model = snapshot ? withSnapshot(snapshot, buildReceiptModel) : buildReceiptModel();
+    const canvas = drawReceipt(model, { outWidth: PRINTER_DOTS, widthUnits: DESIGN_WIDTH, padUnits: SIDE_PAD });
     const ctx = canvas.getContext('2d');
     const { width, height } = canvas;
     const image = ctx.getImageData(0, 0, width, height);
@@ -255,7 +256,34 @@ async function sendBytes(characteristic, bytes, cfg) {
     await sleep(500);   // let the last bytes reach the printer before anything else happens
 }
 
-async function printOverBluetooth() {
+export async function printOrderDirect(snapshot = null) {
+    if ('bluetooth' in navigator) await printOverBluetooth(snapshot);
+    else await shareReceiptImage(snapshot);
+}
+
+// ---------- 4. Way B: iPhone share sheet -> WePrint ----------
+async function shareReceiptImage(snapshot = null) {
+    const { canvas } = await renderReceiptDots(snapshot);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    const file = new File([blob], 'nimet-receipt.png', { type: 'image/png' });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+        return;
+    }
+    // No share sheet: save the picture so it can be opened in the printer app
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'nimet-receipt.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    notify(t('print_image_saved'));
+}
+
+async function printOverBluetooth(snapshot = null) {
     startLog();
     log(`start | ${IS_IOS ? 'iPhone/iPad' : 'other device'} profile | ${navigator.userAgent.slice(0, 70)}`);
     log(`settings: ${JSON.stringify(PROFILE)} | connect delay ${CONNECT_DELAY} ms | test only: ${TEST_ONLY}`);
@@ -267,7 +295,7 @@ async function printOverBluetooth() {
         bytes = buildTestBytes();
         log(`test job: ${bytes.length} bytes`);
     } else {
-        const dots = await renderReceiptDots();
+        const dots = await renderReceiptDots(snapshot);
         bytes = buildEscPos(dots, PROFILE.bandRows);
         log(`receipt: ${dots.canvas.width} x ${dots.height} dots, ${bytes.length} bytes`);
     }
@@ -292,28 +320,6 @@ async function printOverBluetooth() {
             try { device.gatt.disconnect(); log('disconnected from the printer (so other apps can use it)'); } catch (e) { /* already gone */ }
         }
     }
-}
-
-// ---------- 4. Way B: iPhone share sheet -> WePrint ----------
-async function shareReceiptImage() {
-    const { canvas } = await renderReceiptDots();
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-    const file = new File([blob], 'nimet-receipt.png', { type: 'image/png' });
-
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file] });
-        return;
-    }
-    // No share sheet: save the picture so it can be opened in the printer app
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'nimet-receipt.png';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
-    notify(t('print_image_saved'));
 }
 
 // ---------- 5. The Print button ----------
