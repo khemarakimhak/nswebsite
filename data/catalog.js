@@ -119,7 +119,7 @@ export const BADGE_ITEMS = [
     { name: "Jota Joti 2026 badge", nameKh: "បេជ Jota Joti 2026",    price: 2.00, image: "jota-joti-2026.jpg" },
     { name: "Jota Joti 2025 badge", nameKh: "បេជ Jota Joti 2025",    price: 2.00, image: "jota-joti-2025.jpg" },
     { name: "World Scout badge small", nameKh: "បេជ World scout តូច", price: 2.00, image: "world-scout-small.jpg" },
-    //{ name: "World Scout badge big", nameKh: "បេជ World scout ធំ",  price: 2.50, image: "world-scout-big.jpg" },
+    { name: "World Scout badge big", nameKh: "បេជ World scout ធំ",  price: 2.50, image: "world-scout-big.jpg" },
     { name: "SfH badge small", nameKh: "បេជ SfH តូច",                 price: 1.50, image: "sfh-small.jpg" },
     { name: "SfH badge Big", nameKh: "បេជ SfH ធំ",                    price: 2.00, image: "sfh-big.jpg" },
     { name: "Founder Day Badge", nameKh: "បេជ Founder Day",          price: 2.00, image: "founder-day.jpg" },
