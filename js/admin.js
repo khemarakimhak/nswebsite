@@ -526,23 +526,24 @@ function renderJobList() {
             const styleStr = String(w.style || w.productId || '').toLowerCase();
             const isBadgeOrPin = styleStr.includes('badge') || styleStr.includes('pin');
 
-            if (isBadgeOrPin) {
-                // Route badges/pins to the Other Products section automatically
-                const stdKey = w.style || w.productId || 'badge-item';
-                const cleanName = stdKey.replace(/^(shop|pin|badge)-/, '').replace(/-/g, ' ');
-                if (!aggregatedStandards[stdKey]) {
-                    aggregatedStandards[stdKey] = {
-                        title: cleanName,
-                        productId: stdKey,
-                        qty: 0,
-                        customers: []
-                    };
-                }
-                aggregatedStandards[stdKey].qty += (w.qty || 1);
-                totalStandardCount += (w.qty || 1);
-                const custName = (order.receiver && order.receiver.name) || order.name || 'Customer';
-                aggregatedStandards[stdKey].customers.push({ name: custName, qty: w.qty || 1 });
-            } else {
+                if (isBadgeOrPin) {
+                    const stdKey = w.style || w.productId || 'badge-item';
+                    const choice = String(w.color || '').trim();
+                    const mapKey = `${stdKey}|${choice}`;
+                    if (!aggregatedStandards[mapKey]) {
+                        aggregatedStandards[mapKey] = {
+                            title: w.title || stdKey.replace(/^(shop|pin|badge)-/, '').replace(/-/g, ' '),
+                            productId: stdKey,
+                            choice,
+                            qty: 0,
+                            customers: []
+                        };
+                    }
+                    aggregatedStandards[mapKey].qty += (w.qty || 1);
+                    totalStandardCount += (w.qty || 1);
+                    const custName = (order.receiver && order.receiver.name) || order.name || 'Customer';
+                    aggregatedStandards[mapKey].customers.push({ name: custName, qty: w.qty || 1 });
+                } else {
                 // True woggles stay at the top
                 const key = `${w.style || w.productId || 'plain'}|${w.color || ''}|${(w.name || '').trim().toUpperCase()}|${w.kind || 'custom'}`;
                 if (!aggregatedWoggles[key]) {
@@ -649,6 +650,7 @@ function renderJobList() {
                 <div class="space-y-1.5 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
                         <span class="font-black text-sm text-blue-900 uppercase tracking-wide">${escapeHTML(item.title)}</span>
+                        ${item.choice ? `<span class="text-xs font-bold text-gray-700 bg-[#F4A81E]/20 px-2 py-0.5 rounded-md border border-[#F4A81E]/40">${escapeHTML(item.choice)}</span>` : ''}
                         <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">Other Item</span>
                     </div>
                     <div class="text-[11px] text-gray-500 flex items-center gap-1 flex-wrap">
@@ -683,16 +685,22 @@ function copyJobList() {
             const styleStr = String(w.style || w.productId || '').toLowerCase();
             const isBadgeOrPin = styleStr.includes('badge') || styleStr.includes('pin');
 
-            if (isBadgeOrPin) {
-                const stdKey = w.style || w.productId || 'badge-item';
-                const cleanName = stdKey.replace(/^(shop|pin|badge)-/, '').replace(/-/g, ' ');
-                if (!aggregatedStandards[stdKey]) {
-                    aggregatedStandards[stdKey] = { title: cleanName, qty: 0, customers: [] };
-                }
-                aggregatedStandards[stdKey].qty += (w.qty || 1);
-                const cust = (order.receiver && order.receiver.name) || order.name || 'Customer';
-                aggregatedStandards[stdKey].customers.push(cust);
-            } else {
+                if (isBadgeOrPin) {
+                    const stdKey = w.style || w.productId || 'badge-item';
+                    const choice = String(w.color || '').trim();
+                    const mapKey = `${stdKey}|${choice}`;
+                    if (!aggregatedStandards[mapKey]) {
+                        aggregatedStandards[mapKey] = {
+                            title: w.title || stdKey.replace(/^(shop|pin|badge)-/, '').replace(/-/g, ' '),
+                            choice,
+                            qty: 0,
+                            customers: []
+                        };
+                    }
+                    aggregatedStandards[mapKey].qty += (w.qty || 1);
+                    const cust = (order.receiver && order.receiver.name) || order.name || 'Customer';
+                    aggregatedStandards[mapKey].customers.push(cust);
+                } else {
                 const key = `${w.style || w.productId || ''}|${w.color}|${(w.name || '').trim().toUpperCase()}`;
                 if (!aggregatedWoggles[key]) {
                     aggregatedWoggles[key] = {
@@ -738,7 +746,8 @@ function copyJobList() {
         lines.push('---------------------------------------');
         lines.push('🔹 OTHER PRODUCTS:');
         standardValues.forEach(item => {
-            lines.push(`• ${item.qty}x ${item.title.toUpperCase()} (${item.customers.join(', ')})`);
+            const choiceStr = item.choice ? ` [${item.choice}]` : '';
+                lines.push(`• ${item.qty}x ${item.title.toUpperCase()}${choiceStr} (${item.customers.join(', ')})`);
         });
     }
 
