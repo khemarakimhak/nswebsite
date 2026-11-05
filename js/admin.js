@@ -303,10 +303,9 @@ function formatItemsSummary(order) {
     // Custom woggles / choice items
     const customList = cart.customWoggles || [];
     customList.forEach(w => {
-        const namePart = w.name ? ` "${w.name}"` : '';
-        const style = (w.style || '').toUpperCase();
-        const color = w.color || '';
-        lines.push(`<b>${w.qty}x</b> Woggle ${style} (${color}${namePart})`);
+        // woggleLabel gives "Woggle Lis (Red)" for woggles and "<product title> (<option>)" for other items
+        const namePart = (w.kind !== 'normal' && w.name) ? ` "${w.name}"` : '';
+        lines.push(`<b>${w.qty || 1}x</b> ${woggleLabel(w)}${namePart}`);
     });
 
     // Standard items
@@ -522,10 +521,10 @@ function renderJobList() {
         const cart = order.cart || {};
         const customWoggles = cart.customWoggles || [];
         customWoggles.forEach(w => {
-            const key = `${w.style || 'plain'}|${w.color || ''}|${(w.name || '').trim().toUpperCase()}|${w.kind || 'custom'}`;
+            const key = `${w.style || w.productId || 'plain'}|${w.color || ''}|${(w.name || '').trim().toUpperCase()}|${w.kind || 'custom'}`;
             if (!aggregated[key]) {
                 aggregated[key] = {
-                    style: w.style || 'Standard',
+                    style: w.style || w.title || w.productId || 'Standard',
                     color: w.color || 'Default',
                     name: (w.name || '').trim().toUpperCase(),
                     kind: w.kind || 'custom',
@@ -604,10 +603,10 @@ function copyJobList() {
     makingOrders.forEach(order => {
         const cart = order.cart || {};
         (cart.customWoggles || []).forEach(w => {
-            const key = `${w.style}|${w.color}|${(w.name || '').trim().toUpperCase()}`;
+            const key = `${w.style || w.productId || ''}|${w.color}|${(w.name || '').trim().toUpperCase()}`;
             if (!aggregated[key]) {
                 aggregated[key] = {
-                    style: w.style,
+                    style: w.style || w.title || w.productId || 'Item',
                     color: w.color,
                     name: (w.name || '').trim().toUpperCase(),
                     qty: 0,
@@ -844,6 +843,7 @@ async function init() {
             }
 
             // User is signed in AND is an admin:
+            localStorage.setItem('nimet_admin', '1');
             showScreen('screen-app');
             switchTab('orders');
 

@@ -96,6 +96,7 @@ function renderBar() {
     if (chip) chip.classList.toggle('hidden', !admin);
     if (!bar) return;
     bar.classList.toggle('hidden', !admin);
+    $('admin-save-inline-btn')?.classList.toggle('hidden', !admin);
     if (!admin) return;
 
     const title = $('admin-bar-title');
@@ -107,7 +108,9 @@ function renderBar() {
 
 async function onSaveClick() {
     const saveBtn = $('admin-save-btn');
+    const inlineBtn = $('admin-save-inline-btn');
     if (saveBtn) saveBtn.disabled = true;
+    if (inlineBtn) inlineBtn.disabled = true;
     try {
         const result = await saveCurrent();
         if (!result.ok) {
@@ -115,12 +118,17 @@ async function onSaveClick() {
             if (result.reason === 'name') $('receiver-name')?.focus();
         } else {
             hooks.toast(result.updated ? 'Order updated' : 'Order saved to admin');
+            if (inlineBtn) {
+                inlineBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                setTimeout(() => { inlineBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i>'; }, 1500);
+            }
         }
     } catch (err) {
         console.error('Save order failed:', err);
         hooks.toast(`Could not save: ${(err && err.code) || (err && err.message) || 'unknown error'}`);
     } finally {
         if (saveBtn) saveBtn.disabled = false;
+        if (inlineBtn) inlineBtn.disabled = false;
     }
 }
 
@@ -163,6 +171,7 @@ export async function startAdminSession(h) {
     if (localStorage.getItem(ADMIN_FLAG) !== '1' && !editId) return;   // customers stop here: no Firebase at all
 
     $('admin-save-btn')?.addEventListener('click', onSaveClick);
+    $('admin-save-inline-btn')?.addEventListener('click', onSaveClick);
     $('admin-close-btn')?.addEventListener('click', () => $('btn-clear-cart')?.click());
 
     let handledEdit = false;

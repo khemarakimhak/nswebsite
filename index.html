@@ -194,7 +194,13 @@
                 <!-- Receiver details (also printed in the receipt and the PDF) -->
                 <div class="space-y-2">
                     <h4 class="text-[11px] font-bold text-gray-500 uppercase" data-i18n="cart_receiver_title">Receiver Details</h4>
-                    <input type="text" id="receiver-name" data-receiver="name" autocomplete="off" placeholder="Receiver Name" data-i18n-placeholder="cart_receiver_name" class="w-full px-3 py-2 border rounded-xl text-base">
+                    <div class="flex gap-2">
+                        <input type="text" id="receiver-name" data-receiver="name" autocomplete="off" placeholder="Receiver Name" data-i18n-placeholder="cart_receiver_name" class="flex-1 min-w-0 px-3 py-2 border rounded-xl text-base">
+                        <!-- Admin only: save/update the order being edited -->
+                        <button type="button" id="admin-save-inline-btn" class="hidden shrink-0 w-11 rounded-xl bg-[#7414DC] text-white flex items-center justify-center active:scale-95 transition-all" title="Save changes to this order">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                        </button>
+                    </div>
                     <!-- Where the customer ordered from: shown after the name, e.g. "Sophie (TikTok)" -->
                     <div class="grid grid-cols-3 gap-2" id="source-selector">
                         <button type="button" data-action="select-source" data-value="page" class="py-2 px-1 text-xs font-bold rounded-xl border transition-all flex items-center justify-center gap-1.5 bg-gray-50 text-gray-700 border-gray-200"><i class="fa-brands fa-facebook"></i><span data-i18n="source_page">Page</span></button>

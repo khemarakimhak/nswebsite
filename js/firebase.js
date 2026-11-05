@@ -11,6 +11,13 @@ export function firebaseConfigured() {
 }
 
 let loading = null;
+let currentUser = null;   // kept up to date by the login listener below
+
+// The signed-in user right now (or null). Synchronous on purpose: app.js calls it when placing an order.
+// It is null until Firebase has loaded and restored the login, which only happens for signed-in customers/admin.
+export function getCurrentUser() {
+    return currentUser;
+}
 
 function load() {
     if (loading) return loading;
@@ -22,7 +29,9 @@ function load() {
             import(`${base}/firebase-firestore.js`)
         ]);
         const app = appMod.initializeApp(FIREBASE_CONFIG);
-        return { authMod, fsMod, auth: authMod.getAuth(app), db: fsMod.getFirestore(app) };
+        const auth = authMod.getAuth(app);
+        authMod.onAuthStateChanged(auth, user => { currentUser = user || null; });
+        return { authMod, fsMod, auth, db: fsMod.getFirestore(app) };
     })();
     loading.catch(() => { loading = null; });   // allow a retry after a network problem
     return loading;
