@@ -880,30 +880,12 @@ window.addEventListener('DOMContentLoaded', () => {
     // Clear cart
     const clearBtn = document.getElementById('btn-clear-cart');
     if (clearBtn) {
-        clearBtn.addEventListener('click', async () => {
-            // Something on screen that is not saved yet? Ask first.
-            if (hasUnsavedOrder()) {
-                const choice = await askChoice(t('clear_unsaved_message'), [
-                    { value: 'save', label: t('clear_save'), tone: 'primary' },
-                    { value: 'discard', label: t('clear_discard'), tone: 'danger' },
-                    { value: 'cancel', label: t('clear_cancel'), tone: 'neutral' }
-                ]);
-                if (choice === 'cancel') return;
-                if (choice === 'save') {
-                    const result = saveCurrentOrder();
-                    if (!result.ok) {                       // a name is needed to save
-                        showToast(t('toast_need_name'));
-                        document.getElementById('receiver-name')?.focus();
-                        return;
-                    }
-                }
-            }
-            // Clear the cart AND the customer details
+        clearBtn.addEventListener('click', () => {
+            // Clear the cart AND the customer details directly without asking to save
             clearCartState();
             clearReceiverState();
             fillReceiverForm();
             updateCartStateUI();
-            renderSavedList();
             showToast(t('toast_cleared'));
         });
     }
