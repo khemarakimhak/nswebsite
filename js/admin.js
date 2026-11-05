@@ -502,7 +502,91 @@ function renderOrders() {
     });
 }
 
-// ---------- Job List Rendering (Orders marked 'Making') ----------
+// ---------- Job List (orders marked 'Making') ----------
+
+// Badges, pins and shop items go to "Other Products"; woggles stay on top
+const isOtherProduct = w => /^(badge|pin|shop)-/.test(String(w.productId || ''));
+
+const cleanProductName = id => String(id).replace(/^(shop|pin|badge)-/, '').replace(/-/g, ' ');
+
+const orderCustomerName = order =>
+    (order.receiver && order.receiver.name) || order.name || 'Customer';
+
+// Groups all 'Making' orders. Used by both the screen and the copied text.
+function collectJobs() {
+    const makingOrders = allOrders.filter(o => normalizeStatus(o.status) === 'making');
+    const woggles = {};
+    const others = {};
+    let totalWoggleCount = 0;
+    let totalStandardCount = 0;
+
+    const addWoggle = (w, qty, cust) => {
+        const name = (w.name || '').trim().toUpperCase();
+        const key = `${w.style || w.productId || 'plain'}|${w.color || ''}|${name}|${w.kind || 'custom'}`;
+        const g = woggles[key] || (woggles[key] = {
+            style: w.style || w.title || w.productId || 'Standard',
+            color: w.color || 'Default',
+            name,
+            kind: w.kind || 'custom',
+            qty: 0,
+            customers: []
+        });
+        g.qty += qty;
+        g.customers.push({ name: cust, qty });
+        totalWoggleCount += qty;
+    };
+
+    const addOther = (productId, title, choice, qty, cust) => {
+        const key = `${productId}|${choice}`;
+        const g = others[key] || (others[key] = {
+            title: title || cleanProductName(productId),
+            productId,
+            choice,
+            qty: 0,
+            customers: []
+        });
+        g.qty += qty;
+        g.customers.push({ name: cust, qty });
+        totalStandardCount += qty;
+    };
+
+    makingOrders.forEach(order => {
+        const cart = order.cart || {};
+        const cust = orderCustomerName(order);
+
+        (cart.customWoggles || []).forEach(w => {
+            const qty = w.qty || 1;
+            if (isOtherProduct(w)) {
+                // For badges the chosen option (e.g. "Star Class") is stored in w.color
+                addOther(w.productId, w.title, String(w.color || '').trim(), qty, cust);
+            } else {
+                addWoggle(w, qty, cust);
+            }
+        });
+
+        Object.entries(cart.standardItems || {}).forEach(([productId, qty]) => {
+            addOther(productId, '', '', qty || 1, cust);
+        });
+    });
+
+    return {
+        makingOrders,
+        woggleItems: Object.values(woggles)
+            .sort((a, b) =>
+                a.color.localeCompare(b.color) ||
+                a.style.localeCompare(b.style) ||
+                a.name.localeCompare(b.name)),
+        otherItems: Object.values(others)
+            .sort((a, b) => a.title.localeCompare(b.title) || a.choice.localeCompare(b.choice)),
+        totalWoggleCount,
+        totalStandardCount
+    };
+}
+
+const customerPills = customers => customers
+    .map(c => `<span class="text-[11px] bg-gray-100 px-2 py-0.5 rounded-md">${escapeHTML(c.name)} (${c.qty})</span>`)
+    .join(' ');
+
 function renderJobList() {
     const container = $('jobs-list');
     const summary = $('jobs-summary');
@@ -510,94 +594,17 @@ function renderJobList() {
     const countBadge = $('jobs-count');
     if (!container) return;
 
-    // Filter orders currently marked 'making'
-    const makingOrders = allOrders.filter(o => normalizeStatus(o.status) === 'making');
+    const { makingOrders, woggleItems, otherItems, totalWoggleCount, totalStandardCount } = collectJobs();
 
-    const aggregatedWoggles = {};
-    const aggregatedStandards = {};
-    let totalWoggleCount = 0;
-    let totalStandardCount = 0;
-
-    makingOrders.forEach(order => {
-        const cart = order.cart || {};
-        const customWoggles = cart.customWoggles || [];
-        
-        customWoggles.forEach(w => {
-            const styleStr = String(w.style || w.productId || '').toLowerCase();
-            const isBadgeOrPin = styleStr.includes('badge') || styleStr.includes('pin');
-
-                if (isBadgeOrPin) {
-                    const stdKey = w.style || w.productId || 'badge-item';
-                    const choice = String(w.color || '').trim();
-                    const mapKey = `${stdKey}|${choice}`;
-                    if (!aggregatedStandards[mapKey]) {
-                        aggregatedStandards[mapKey] = {
-                            title: w.title || stdKey.replace(/^(shop|pin|badge)-/, '').replace(/-/g, ' '),
-                            productId: stdKey,
-                            choice,
-                            qty: 0,
-                            customers: []
-                        };
-                    }
-                    aggregatedStandards[mapKey].qty += (w.qty || 1);
-                    totalStandardCount += (w.qty || 1);
-                    const custName = (order.receiver && order.receiver.name) || order.name || 'Customer';
-                    aggregatedStandards[mapKey].customers.push({ name: custName, qty: w.qty || 1 });
-                } else {
-                // True woggles stay at the top
-                const key = `${w.style || w.productId || 'plain'}|${w.color || ''}|${(w.name || '').trim().toUpperCase()}|${w.kind || 'custom'}`;
-                if (!aggregatedWoggles[key]) {
-                    aggregatedWoggles[key] = {
-                        style: w.style || w.title || w.productId || 'Standard',
-                        color: w.color || 'Default',
-                        name: (w.name || '').trim().toUpperCase(),
-                        kind: w.kind || 'custom',
-                        qty: 0,
-                        customers: []
-                    };
-                }
-                aggregatedWoggles[key].qty += (w.qty || 1);
-                totalWoggleCount += (w.qty || 1);
-                const custName = (order.receiver && order.receiver.name) || order.name || 'Customer';
-                aggregatedWoggles[key].customers.push({ name: custName, qty: w.qty || 1 });
-            }
-        });
-
-        // Standard items processing
-        const standard = cart.standardItems || {};
-        Object.entries(standard).forEach(([productId, qty]) => {
-            const cleanName = productId.replace(/^(shop|pin|badge)-/, '').replace(/-/g, ' ');
-            if (!aggregatedStandards[productId]) {
-                aggregatedStandards[productId] = {
-                    title: cleanName,
-                    productId: productId,
-                    qty: 0,
-                    customers: []
-                };
-            }
-            aggregatedStandards[productId].qty += (qty || 1);
-            totalStandardCount += (qty || 1);
-            const custName = (order.receiver && order.receiver.name) || order.name || 'Customer';
-            aggregatedStandards[productId].customers.push({ name: custName, qty: qty || 1 });
-        });
-    });
-
-    const woggleItems = Object.values(aggregatedWoggles);
-    woggleItems.sort((a, b) => a.style.localeCompare(b.style) || a.name.localeCompare(b.name));
-
-    const standardItemsList = Object.values(aggregatedStandards);
-    standardItemsList.sort((a, b) => a.title.localeCompare(b.title));
-
-    const totalItemCount = totalWoggleCount + totalStandardCount;
-    if (countBadge) countBadge.textContent = totalItemCount;
+    if (countBadge) countBadge.textContent = totalWoggleCount + totalStandardCount;
     if (summary) summary.textContent = `${makingOrders.length} order(s) in production, ${totalWoggleCount} woggle(s), ${totalStandardCount} other item(s)`;
     if (ordersMeta) {
         ordersMeta.textContent = makingOrders.length
-            ? `Orders: ${makingOrders.map(o => (o.receiver && o.receiver.name) || o.name).join(', ')}`
+            ? `Orders: ${makingOrders.map(orderCustomerName).join(', ')}`
             : '';
     }
 
-    if (woggleItems.length === 0 && standardItemsList.length === 0) {
+    if (woggleItems.length === 0 && otherItems.length === 0) {
         container.innerHTML = `
             <div class="bg-white rounded-3xl border border-purple-100 p-8 text-center text-gray-400 text-sm space-y-2">
                 <i class="fa-solid fa-clipboard-check text-3xl text-emerald-300"></i>
@@ -608,14 +615,10 @@ function renderJobList() {
         return;
     }
 
-    // Render Woggles HTML (Top Section)
     const wogglesHtml = woggleItems.map(item => {
-        const isNameWoggle = item.kind === 'custom' && item.name;
-        const nameBadge = isNameWoggle
+        const nameBadge = (item.kind === 'custom' && item.name)
             ? `<span class="bg-[#F4A81E]/20 text-gray-900 font-mono font-black px-2 py-0.5 rounded-lg border border-[#F4A81E]/40 text-xs">NAME: ${escapeHTML(item.name)}</span>`
             : `<span class="text-xs text-gray-400 font-semibold italic">Plain (no name)</span>`;
-
-        const customerPills = item.customers.map(c => `<span class="text-[11px] bg-gray-100 px-2 py-0.5 rounded-md">${escapeHTML(c.name)} (${c.qty})</span>`).join(' ');
 
         return `
             <div class="bg-white rounded-2xl border border-purple-100 p-3.5 shadow-sm flex items-center justify-between gap-3">
@@ -626,7 +629,7 @@ function renderJobList() {
                         ${nameBadge}
                     </div>
                     <div class="text-[11px] text-gray-500 flex items-center gap-1 flex-wrap">
-                        <span class="text-gray-400">For:</span> ${customerPills}
+                        <span class="text-gray-400">For:</span> ${customerPills(item.customers)}
                     </div>
                 </div>
                 <div class="shrink-0 text-center bg-[#7414DC]/10 border border-[#7414DC]/20 px-3 py-1.5 rounded-xl">
@@ -637,24 +640,19 @@ function renderJobList() {
         `;
     }).join('');
 
-    // Render Other Products HTML (Bottom Section)
-    const standardHtml = standardItemsList.length > 0 ? `
+    const othersHtml = otherItems.length === 0 ? '' : `
         <div class="pt-2 pb-1">
             <h3 class="text-xs font-black uppercase tracking-wider text-blue-900 px-1"><i class="fa-solid fa-box"></i> Other Products</h3>
         </div>
-        ` + standardItemsList.map(item => {
-        const customerPills = item.customers.map(c => `<span class="text-[11px] bg-gray-100 px-2 py-0.5 rounded-md">${escapeHTML(c.name)} (${c.qty})</span>`).join(' ');
-
-        return `
+        ` + otherItems.map(item => `
             <div class="bg-white rounded-2xl border border-blue-100 p-3.5 shadow-sm flex items-center justify-between gap-3">
                 <div class="space-y-1.5 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
                         <span class="font-black text-sm text-blue-900 uppercase tracking-wide">${escapeHTML(item.title)}</span>
                         ${item.choice ? `<span class="text-xs font-bold text-gray-700 bg-[#F4A81E]/20 px-2 py-0.5 rounded-md border border-[#F4A81E]/40">${escapeHTML(item.choice)}</span>` : ''}
-                        <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">Other Item</span>
                     </div>
                     <div class="text-[11px] text-gray-500 flex items-center gap-1 flex-wrap">
-                        <span class="text-gray-400">For:</span> ${customerPills}
+                        <span class="text-gray-400">For:</span> ${customerPills(item.customers)}
                     </div>
                 </div>
                 <div class="shrink-0 text-center bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl">
@@ -662,72 +660,19 @@ function renderJobList() {
                     <span class="text-lg font-black text-blue-700 leading-none">${item.qty}</span>
                 </div>
             </div>
-        `;
-    }).join('') : '';
+        `).join('');
 
-    container.innerHTML = wogglesHtml + standardHtml;
+    container.innerHTML = wogglesHtml + othersHtml;
 }
 
-// Copy the aggregated job list to clipboard
 function copyJobList() {
-    const makingOrders = allOrders.filter(o => normalizeStatus(o.status) === 'making');
+    const { makingOrders, woggleItems, otherItems } = collectJobs();
     if (makingOrders.length === 0) {
         showToast('No jobs to copy');
         return;
     }
 
-    const aggregatedWoggles = {};
-    const aggregatedStandards = {};
-
-    makingOrders.forEach(order => {
-        const cart = order.cart || {};
-        (cart.customWoggles || []).forEach(w => {
-            const styleStr = String(w.style || w.productId || '').toLowerCase();
-            const isBadgeOrPin = styleStr.includes('badge') || styleStr.includes('pin');
-
-                if (isBadgeOrPin) {
-                    const stdKey = w.style || w.productId || 'badge-item';
-                    const choice = String(w.color || '').trim();
-                    const mapKey = `${stdKey}|${choice}`;
-                    if (!aggregatedStandards[mapKey]) {
-                        aggregatedStandards[mapKey] = {
-                            title: w.title || stdKey.replace(/^(shop|pin|badge)-/, '').replace(/-/g, ' '),
-                            choice,
-                            qty: 0,
-                            customers: []
-                        };
-                    }
-                    aggregatedStandards[mapKey].qty += (w.qty || 1);
-                    const cust = (order.receiver && order.receiver.name) || order.name || 'Customer';
-                    aggregatedStandards[mapKey].customers.push(cust);
-                } else {
-                const key = `${w.style || w.productId || ''}|${w.color}|${(w.name || '').trim().toUpperCase()}`;
-                if (!aggregatedWoggles[key]) {
-                    aggregatedWoggles[key] = {
-                        style: w.style || w.title || w.productId || 'Item',
-                        color: w.color,
-                        name: (w.name || '').trim().toUpperCase(),
-                        qty: 0,
-                        customers: []
-                    };
-                }
-                aggregatedWoggles[key].qty += (w.qty || 1);
-                const cust = (order.receiver && order.receiver.name) || order.name || 'Customer';
-                aggregatedWoggles[key].customers.push(cust);
-            }
-        });
-
-        const standard = cart.standardItems || {};
-        Object.entries(standard).forEach(([productId, qty]) => {
-            const cleanName = productId.replace(/^(shop|pin|badge)-/, '').replace(/-/g, ' ');
-            if (!aggregatedStandards[productId]) {
-                aggregatedStandards[productId] = { title: cleanName, qty: 0, customers: [] };
-            }
-            aggregatedStandards[productId].qty += (qty || 1);
-            const cust = (order.receiver && order.receiver.name) || order.name || 'Customer';
-            aggregatedStandards[productId].customers.push(cust);
-        });
-    });
+    const names = customers => customers.map(c => c.name).join(', ');
 
     const lines = [
         `📋 NIMET SCOUT SHOP - JOB LIST (${new Date().toLocaleDateString()})`,
@@ -736,28 +681,25 @@ function copyJobList() {
         '🔹 WOGGLES:'
     ];
 
-    Object.values(aggregatedWoggles).forEach(item => {
-        const nameStr = item.name ? ` [NAME: ${item.name}]` : ' [Plain]';
-        lines.push(`• ${item.qty}x ${item.style.toUpperCase()} - ${item.color}${nameStr} (${item.customers.join(', ')})`);
+    woggleItems.forEach(item => {
+        const nameStr = (item.kind === 'custom' && item.name) ? ` [NAME: ${item.name}]` : ' [Plain]';
+        lines.push(`• ${item.qty}x ${item.style.toUpperCase()} - ${item.color}${nameStr} (${names(item.customers)})`);
     });
 
-    const standardValues = Object.values(aggregatedStandards);
-    if (standardValues.length > 0) {
+    if (otherItems.length > 0) {
         lines.push('---------------------------------------');
         lines.push('🔹 OTHER PRODUCTS:');
-        standardValues.forEach(item => {
+        otherItems.forEach(item => {
             const choiceStr = item.choice ? ` [${item.choice}]` : '';
-                lines.push(`• ${item.qty}x ${item.title.toUpperCase()}${choiceStr} (${item.customers.join(', ')})`);
+            lines.push(`• ${item.qty}x ${item.title.toUpperCase()}${choiceStr} (${names(item.customers)})`);
         });
     }
 
     lines.push('---------------------------------------');
 
-    navigator.clipboard.writeText(lines.join('\n')).then(() => {
-        showToast('Job list copied to clipboard!');
-    }).catch(() => {
-        showToast('Could not copy to clipboard');
-    });
+    navigator.clipboard.writeText(lines.join('\n'))
+        .then(() => showToast('Job list copied to clipboard!'))
+        .catch(() => showToast('Could not copy to clipboard'));
 }
 
 // ---------- Order Operations ----------
