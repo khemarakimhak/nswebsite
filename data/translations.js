@@ -74,7 +74,7 @@ export const TRANSLATIONS = {
     woggle_cart_label:        { en: "{style} Woggle ({color})",         kh: "កងឈ្មោះ {style} ({color})" },
     woggle_normal_cart_label: { en: "Normal {style} Woggle ({color})",  kh: "កង {style} ធម្មតា ({color})" },
     cart_copy_receipt:   { en: "Copy Receipt",                          kh: "ចម្លងវិក្កយបត្រ" },
-    cart_checkout:       { en: "Check Out",                             kh: "ទូទាត់ប្រាក់" },
+    cart_checkout:       { en: "Sent order to Nimet",                   kh: "ផ្ញើរការកុម្មង់ទៅនិម្មិត" },
     cart_export_pdf:     { en: "Export PDF",                            kh: "ទាញយកជា PDF" },
     cart_print:          { en: "Print",                                  kh: "បោះពុម្ព" },
     cart_clear:          { en: "Clear Cart",                            kh: "សម្អាតកន្ត្រក" },
