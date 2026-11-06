@@ -39,7 +39,7 @@ import {
 import { createReceiptPdf } from './pdf.js';
 import './print.js';   // optional Bluetooth print feature (delete this line + js/print.js + the Print button to remove it)
 import { createOrder, deleteOrder, getCurrentUser, authReady } from './firebase.js';
-import { initAccount, refreshAccount, applyProfileToCart } from './account.js';
+import { initAccount, refreshAccount, applyProfileToCart, toggleAccountModal } from './account.js';
 import { startAdminSession, getEditingOrder, afterClear as endEdit } from './admin-session.js';
 import {
     listSaved,
@@ -890,6 +890,21 @@ window.addEventListener('DOMContentLoaded', () => {
     // Checkout — sends order to Firebase without requiring customer account
     document.getElementById('checkout-btn')?.addEventListener('click', async () => {
         if (isCartEmpty()) { showToast(t('toast_cart_empty')); return; }
+
+        // Only signed-in customers (and the owner) can send an order. Everyone else can still fill the cart and copy the receipt.
+        const signedInUser = await authReady();
+        if (!signedInUser) {
+            const choice = await askChoice(t('checkout_need_account'), [
+                { label: t('checkout_signin_btn'), value: 'signin', tone: 'primary' },
+                { label: t('checkout_ok_btn'), value: 'cancel', tone: 'neutral' }
+            ]);
+            if (choice === 'signin') {
+                window.toggleCartModal(false);
+                toggleAccountModal(true);
+            }
+            return;
+        }
+
         const receiver = getReceiver();
         const name = (receiver.name || '').trim();
         if (!name) { showToast(t('toast_need_name')); document.getElementById('receiver-name')?.focus(); return; }

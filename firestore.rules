@@ -4,7 +4,7 @@ rules_version = '2';
 // (or deploy it with:  firebase deploy --only firestore:rules)
 //
 // Admins have full access to orders.
-// Customers can read their own orders and create new ones with their uid.
+// Customers with an account can read their own orders and create new ones with their uid. Guests cannot send orders.
 //
 // Customer accounts (phone number + password):
 //   customerInvites/{phone}  one document per customer, added by the owner in the Firebase console.
@@ -72,8 +72,10 @@ service cloud.firestore {
       // Admins can read, create, update, and delete all orders
       allow read, update, delete: if isAdmin();
 
-      // Anyone (even guest without account) or signed-in admin/customer can create an order
-      allow create: if true;
+      // Only the owner, or a customer who has finished creating their account, can send an order.
+      // Guests can fill the cart and copy the receipt, but cannot send it. A customer's order must carry their own uid.
+      allow create: if isAdmin()
+          || (ownsInvite() && request.resource.data.userId == request.auth.uid);
 
       // Signed-in customers can read their own orders
       allow read: if request.auth != null && (

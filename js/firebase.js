@@ -21,10 +21,13 @@ export function getCurrentUser() {
     return currentUser;
 }
 
-// Resolves with the signed-in user (or null) once Firebase has restored the login. Loads Firebase if needed.
+// The signed-in user right now (or null), after Firebase has restored the login. Loads Firebase if needed.
+// It asks Firebase for the live user every time, so signing out or in is noticed straight away
+// (the first answer is NOT remembered).
 export async function authReady() {
-    await load();
-    return authReadyPromise;
+    const f = await load();
+    await authReadyPromise;          // only waits for the first login check after the page opens
+    return f.auth.currentUser;
 }
 
 function load() {

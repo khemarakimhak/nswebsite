@@ -191,6 +191,9 @@ export const TRANSLATIONS = {
     account_progress:         { en: "Progress",                              kh: "ដំណើរការ" },
     account_items:            { en: "Items",                                 kh: "ទំនិញ" },
     account_delivery:         { en: "Delivery",                              kh: "ការដឹកជញ្ជូន" },
+    checkout_need_account:    { en: "You need an account to send your order. Please contact Nimet to create one for free. You can still copy your receipt and send it to us.", kh: "អ្នកត្រូវការគណនីដើម្បីផ្ញើការកម្ម៉ង់។ សូមទាក់ទងមកនិម្មិតដើម្បីបង្កើតគណនីដោយឥតគិតថ្លៃ។ អ្នកនៅតែអាចចម្លងវិក្កយបត្រ ហើយផ្ញើមកយើងខ្ញុំបាន។" },
+    checkout_signin_btn:      { en: "Sign in",                               kh: "ចូលគណនី" },
+    checkout_ok_btn:          { en: "OK",                                    kh: "យល់ព្រម" },
     account_cancelled_note:   { en: "This order has been cancelled",         kh: "ការកម្ម៉ង់នេះត្រូវបានបោះបង់" },
 };
 
