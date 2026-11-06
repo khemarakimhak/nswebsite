@@ -915,8 +915,8 @@ async function init() {
                 orders => {
                     allOrders = orders;
                     renderStatusFilters();
-                    if (currentTab === 'orders') renderOrders();
-                    else renderJobList();
+                    renderOrders();
+                    renderJobList();
                 },
                 err => {
                     console.error('Error fetching orders:', err);

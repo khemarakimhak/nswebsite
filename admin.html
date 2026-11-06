@@ -1,20 +1,54 @@
 <!DOCTYPE html>
-<link rel="manifest" href="admin-manifest.json">
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
     <title>Nimet Scout Shop - Admin</title>
+    <link rel="manifest" href="admin-manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+
+    <!-- Desktop layout: plain CSS (not Tailwind variants) so it always wins,
+         even if admin.js hides a panel with the "hidden" class or inline style. -->
+    <style>
+        .desktop-title { display: none; }
+
+        @media (min-width: 1024px) {
+            /* Wider page */
+            #header-inner,
+            #main-wrap { max-width: 80rem; }
+
+            /* Tabs are not needed on desktop */
+            #tabs-bar { display: none !important; }
+
+            /* Two columns, both panels always visible */
+            #panels {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                gap: 1.5rem;
+                align-items: start;
+            }
+            #panel-orders,
+            #panel-jobs {
+                display: block !important;
+                max-height: calc(100vh - 100px);
+                overflow-y: auto;
+                padding-right: 0.25rem;
+            }
+            #panel-orders > * + *,
+            #panel-jobs > * + * { margin-top: 0.75rem; }
+
+            .desktop-title { display: block; }
+        }
+    </style>
 </head>
 <body class="min-h-screen text-gray-800 antialiased">
 
     <!-- Header (always visible) -->
     <header class="sticky top-0 z-40 bg-[#7414DC] text-white px-4 py-3 shadow-md">
-        <div class="max-w-3xl mx-auto flex items-center justify-between gap-2">
+        <div id="header-inner" class="max-w-3xl mx-auto flex items-center justify-between gap-2">
             <div class="flex items-center gap-2.5 min-w-0">
                 <img src="assets/logo/nimet-scout-store-logo.svg" alt="" class="w-10 h-10 shrink-0 object-contain" onerror="this.style.display='none'">
                 <div class="min-w-0">
@@ -30,7 +64,7 @@
         </div>
     </header>
 
-    <main class="max-w-3xl mx-auto px-4 pt-5 pb-24">
+    <main id="main-wrap" class="max-w-3xl mx-auto px-4 pt-5 pb-24">
 
         <!-- Firebase not set up yet -->
         <section id="screen-setup" class="hidden bg-white rounded-3xl border border-amber-200 p-5 space-y-2">
@@ -71,33 +105,39 @@
         <!-- The admin -->
         <section id="screen-app" class="hidden space-y-4">
 
-            <!-- Tabs -->
-            <div class="grid grid-cols-2 gap-2 bg-white rounded-2xl border border-purple-100 p-1.5 shadow-sm">
+            <!-- Tabs (mobile only) -->
+            <div id="tabs-bar" class="grid grid-cols-2 gap-2 bg-white rounded-2xl border border-purple-100 p-1.5 shadow-sm">
                 <button id="tab-orders-btn" type="button" data-tab="orders" class="py-2.5 rounded-xl text-sm font-black" style="min-height:0">Orders <span id="orders-count" class="ml-1 text-[11px] font-bold opacity-70"></span></button>
                 <button id="tab-jobs-btn" type="button" data-tab="jobs" class="py-2.5 rounded-xl text-sm font-black" style="min-height:0"><i class="fa-solid fa-hammer text-xs"></i> Job list <span id="jobs-count" class="ml-1 min-w-[20px] px-1.5 py-0.5 rounded-full bg-orange-500 text-white text-[10px] font-black">0</span></button>
             </div>
 
-            <!-- Orders -->
-            <div id="panel-orders" class="space-y-3">
-                <div class="relative">
-                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
-                    <input id="order-search" type="text" inputmode="search" autocomplete="off" placeholder="Search name or phone..." class="w-full pl-10 pr-4 py-2 rounded-2xl border border-purple-100 bg-white text-base shadow-sm">
-                </div>
-                <div id="status-filters" class="flex gap-2 overflow-x-auto pb-1"></div>
-                <div id="orders-list" class="space-y-3"></div>
-            </div>
+            <!-- Both panels live in one wrapper: stacked on mobile (tabs switch them), side by side on desktop -->
+            <div id="panels">
 
-            <!-- Job list (woggles of all orders marked Making) -->
-            <div id="panel-jobs" class="hidden space-y-3">
-                <div class="flex items-start justify-between gap-2">
-                    <div class="min-w-0">
-                        <h2 class="text-xl font-black text-purple-900">Job list</h2>
-                        <p id="jobs-summary" class="text-xs text-gray-500"></p>
+                <!-- Orders -->
+                <div id="panel-orders" class="space-y-3">
+                    <h2 class="desktop-title text-xl font-black text-purple-900">Orders</h2>
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
+                        <input id="order-search" type="text" inputmode="search" autocomplete="off" placeholder="Search name or phone..." class="w-full pl-10 pr-4 py-2 rounded-2xl border border-purple-100 bg-white text-base shadow-sm">
                     </div>
-                    <button id="copy-jobs-btn" type="button" class="shrink-0 px-3 py-2 rounded-xl bg-[#80BE43] text-gray-900 text-xs font-black" style="min-height:0"><i class="fa-solid fa-copy"></i> Copy list</button>
+                    <div id="status-filters" class="flex gap-2 overflow-x-auto pb-1"></div>
+                    <div id="orders-list" class="space-y-3"></div>
                 </div>
-                <div id="jobs-orders" class="text-[11px] text-gray-500"></div>
-                <div id="jobs-list" class="space-y-3"></div>
+
+                <!-- Job list (woggles of all orders marked Making) -->
+                <div id="panel-jobs" class="hidden space-y-3">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <h2 class="text-xl font-black text-purple-900">Job list</h2>
+                            <p id="jobs-summary" class="text-xs text-gray-500"></p>
+                        </div>
+                        <button id="copy-jobs-btn" type="button" class="shrink-0 px-3 py-2 rounded-xl bg-[#80BE43] text-gray-900 text-xs font-black" style="min-height:0"><i class="fa-solid fa-copy"></i> Copy list</button>
+                    </div>
+                    <div id="jobs-orders" class="text-[11px] text-gray-500"></div>
+                    <div id="jobs-list" class="space-y-3"></div>
+                </div>
+
             </div>
         </section>
     </main>
