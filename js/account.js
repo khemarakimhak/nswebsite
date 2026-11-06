@@ -25,14 +25,10 @@ import {
 
 import { formatPrice } from './currency.js';
 import { getLang, t } from './i18n.js';
-import { DELIVERY } from '../data/catalog.js';
 import {
     receiverDeliveryText,
     getReceiver,
-    setReceiverField,
-    DELIVERY_METHODS,
-    deliveryLabel,
-    zoneLabel
+    setReceiverField
 } from './cart.js';
 
 const $ = id => document.getElementById(id);
@@ -82,7 +78,7 @@ function normalizeStatus(st) {
 
 // ---------- State ----------
 let currentUser = null;
-let profile = null;            // saved details: { name, phone, address, delivery, deliverySub }
+let profile = null;            // saved details: { name, phone, address }
 let customerOrders = [];
 let ordersUnsubscribe = null;
 let authUnsubscribe = null;
@@ -140,11 +136,6 @@ function applyProfileToReceiver(force) {
             changed = true;
         }
     });
-    if (profile.delivery && (force || !r.delivery)) {
-        setReceiverField('delivery', profile.delivery);
-        setReceiverField('deliverySub', profile.deliverySub === undefined ? '' : profile.deliverySub);
-        changed = true;
-    }
     if (changed) callbacks.onReceiverChanged();
 }
 
@@ -322,40 +313,15 @@ function renderSettingsForm() {
         set('account-set-phone', p.phone || localPhone(phoneFromUser(currentUser)));
         set('account-set-address', p.address);
     }
-
-    const deliverySel = $('account-set-delivery');
-    if (deliverySel && !typing) {
-        const current = (profile && profile.delivery) || '';
-        deliverySel.innerHTML = `<option value="">${escapeHTML(t('account_delivery_none'))}</option>` +
-            DELIVERY_METHODS.map(code => `<option value="${code}"${code === current ? ' selected' : ''}>${escapeHTML(deliveryLabel(code))}</option>`).join('');
-        renderZoneSelect(current, profile ? profile.deliverySub : '');
-    }
-}
-
-// The price choice (Near / Average / Outside PP) only exists for methods that have several prices
-function renderZoneSelect(method, selectedFee) {
-    const zoneSel = $('account-set-zone');
-    if (!zoneSel) return;
-    const config = DELIVERY[method];
-    const hasZones = !!(config && Array.isArray(config.fees));
-    zoneSel.classList.toggle('hidden', !hasZones);
-    zoneSel.innerHTML = hasZones
-        ? `<option value="">${escapeHTML(t('delivery_choose_fee'))}</option>` +
-          config.fees.map(z => `<option value="${z.fee}"${Number(selectedFee) === z.fee && selectedFee !== '' ? ' selected' : ''}>${escapeHTML(zoneLabel(z))} - ${formatPrice(z.fee)}</option>`).join('')
-        : '';
 }
 
 async function saveSettings() {
     if (!isCustomerUser(currentUser)) return;
     const btn = $('account-save-btn');
-    const method = $('account-set-delivery')?.value || '';
-    const zoneRaw = $('account-set-zone')?.value || '';
     const next = {
         name: ($('account-set-name')?.value || '').trim(),
         phone: ($('account-set-phone')?.value || '').trim(),
-        address: ($('account-set-address')?.value || '').trim(),
-        delivery: method,
-        deliverySub: zoneRaw === '' ? '' : Number(zoneRaw)
+        address: ($('account-set-address')?.value || '').trim()
     };
     if (btn) btn.disabled = true;
     showMessage('account-settings-message', '');
@@ -554,7 +520,6 @@ export function initAccount(options = {}) {
     $('account-tab-orders')?.addEventListener('click', () => setPane('orders'));
     $('account-tab-settings')?.addEventListener('click', () => { setPane('settings'); renderSettingsForm(); });
     $('account-save-btn')?.addEventListener('click', saveSettings);
-    $('account-set-delivery')?.addEventListener('change', e => renderZoneSelect(e.target.value, ''));
 
     // "Browse Products" in the empty orders list
     $('account-orders-list')?.addEventListener('click', e => {
