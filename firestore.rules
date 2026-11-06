@@ -5,6 +5,13 @@ rules_version = '2';
 //
 // Admins have full access to orders.
 // Customers can read their own orders and create new ones with their uid.
+//
+// Customer accounts (phone number + password):
+//   customerInvites/{phone}  one document per customer, added by the owner in the Firebase console.
+//                            Anyone can read ONE invite if they know the number (the sign-in screen needs this),
+//                            so keep nothing private in it. The customer "claims" it when creating a password.
+//   customers/{uid}          the customer's own saved details (name, phone, address, delivery).
+//                            Only that customer can read or change it.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -13,10 +20,52 @@ service cloud.firestore {
           && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
+    // The sign-in email of a customer is "<phone>@customer.nimetscoutshop.app" (see js/firebase.js)
+    function isCustomerEmail() {
+      return request.auth != null
+          && request.auth.token.email != null
+          && request.auth.token.email.matches('.*@customer[.]nimetscoutshop[.]app');
+    }
+
+    function customerPhone() {
+      return request.auth.token.email.split('@')[0];
+    }
+
+    // True when the signed-in customer is the one who claimed their phone number's invite
+    function ownsInvite() {
+      return isCustomerEmail()
+          && exists(/databases/$(database)/documents/customerInvites/$(customerPhone()))
+          && get(/databases/$(database)/documents/customerInvites/$(customerPhone())).data.get('uid', '') == request.auth.uid;
+    }
+
     // A signed-in user may only check whether THEIR OWN id is in the list.
     match /admins/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;
+    }
+
+    match /customerInvites/{phone} {
+      // Look up one number (no listing). Needed before sign-in to know "create password" or "enter password".
+      allow get: if true;
+      allow list: if isAdmin();
+
+      // First sign-in: the new customer claims their own, still unclaimed, number. One time only.
+      allow update: if isCustomerEmail()
+          && phone == customerPhone()
+          && resource.data.get('claimed', false) != true
+          && request.resource.data.claimed == true
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['claimed', 'uid', 'claimedAt']);
+
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /customers/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid && ownsInvite();
+      allow create, update: if request.auth != null && request.auth.uid == uid && ownsInvite()
+          && request.resource.data.keys().hasOnly(['name', 'phone', 'address', 'delivery', 'deliverySub', 'updatedAt'])
+          && request.resource.data.get('address', '').size() <= 500;
+      allow delete: if isAdmin();
     }
 
     match /orders/{orderId} {

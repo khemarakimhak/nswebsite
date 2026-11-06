@@ -12,11 +12,19 @@ export function firebaseConfigured() {
 
 let loading = null;
 let currentUser = null;   // kept up to date by the login listener below
+let authReadyResolve;
+const authReadyPromise = new Promise(r => { authReadyResolve = r; });
 
 // The signed-in user right now (or null). Synchronous on purpose: app.js calls it when placing an order.
 // It is null until Firebase has loaded and restored the login, which only happens for signed-in customers/admin.
 export function getCurrentUser() {
     return currentUser;
+}
+
+// Resolves with the signed-in user (or null) once Firebase has restored the login. Loads Firebase if needed.
+export async function authReady() {
+    await load();
+    return authReadyPromise;
 }
 
 function load() {
@@ -30,7 +38,7 @@ function load() {
         ]);
         const app = appMod.initializeApp(FIREBASE_CONFIG);
         const auth = authMod.getAuth(app);
-        authMod.onAuthStateChanged(auth, user => { currentUser = user || null; });
+        authMod.onAuthStateChanged(auth, user => { currentUser = user || null; authReadyResolve(currentUser); });
         return { authMod, fsMod, auth, db: fsMod.getFirestore(app) };
     })();
     loading.catch(() => { loading = null; });   // allow a retry after a network problem
@@ -84,6 +92,91 @@ export async function signOutNow() {
 export async function sendReset(email) {
     const f = await load();
     return f.authMod.sendPasswordResetEmail(f.auth, email);
+}
+
+// ---------- Customer accounts (phone number + password) ----------
+// Customers type a phone number, never an email. Behind the scenes Firebase gets the email
+// "<phone>@customer.nimetscoutshop.app" (it never receives mail). The owner adds each customer in the
+// "customerInvites" collection (document id = phone number). See firestore.rules.
+export const CUSTOMER_EMAIL_DOMAIN = 'customer.nimetscoutshop.app';
+
+// Any way of typing a Cambodian number -> digits with country code, e.g. "012 345 678" -> "85512345678"
+export function normalizePhone(input) {
+    let d = String(input || '').replace(/\D/g, '');
+    if (d.startsWith('00')) d = d.slice(2);
+    if (d.startsWith('855')) return d;
+    if (d.startsWith('0')) return '855' + d.slice(1);
+    return d.length >= 8 && d.length <= 9 ? '855' + d : d;
+}
+
+// "85512345678" -> "012345678" (how people write it)
+export function localPhone(phone) {
+    return String(phone || '').startsWith('855') ? '0' + String(phone).slice(3) : String(phone || '');
+}
+
+export const phoneToEmail = phone => `${phone}@${CUSTOMER_EMAIL_DOMAIN}`;
+export const isCustomerUser = user => !!user && String(user.email || '').endsWith('@' + CUSTOMER_EMAIL_DOMAIN);
+export const phoneFromUser = user => (isCustomerUser(user) ? user.email.split('@')[0] : '');
+
+// callback(user | null) runs now and every time the login changes (no admin check, used by the shop)
+export async function watchAuth(callback) {
+    const f = await load();
+    return f.authMod.onAuthStateChanged(f.auth, user => callback(user || null));
+}
+
+// Is this phone number on the owner's list, and has its password already been created?
+export async function checkCustomerInvite(phone) {
+    const f = await load();
+    const snap = await f.fsMod.getDoc(f.fsMod.doc(f.db, 'customerInvites', phone));
+    return snap.exists() ? { exists: true, claimed: snap.data().claimed === true } : { exists: false, claimed: false };
+}
+
+export async function customerSignIn(phone, password) {
+    const f = await load();
+    return f.authMod.signInWithEmailAndPassword(f.auth, phoneToEmail(phone), password);
+}
+
+// First sign-in: create the password, then mark the invite as taken so nobody else can create it again
+export async function customerCreateAccount(phone, password) {
+    const f = await load();
+    const email = phoneToEmail(phone);
+    let cred;
+    try {
+        cred = await f.authMod.createUserWithEmailAndPassword(f.auth, email, password);
+    } catch (err) {
+        if (err && err.code === 'auth/email-already-in-use') {
+            // An earlier try created the sign-in but did not finish: carry on with the same password
+            cred = await f.authMod.signInWithEmailAndPassword(f.auth, email, password);
+        } else {
+            throw err;
+        }
+    }
+    const { doc, getDoc, updateDoc, serverTimestamp } = f.fsMod;
+    const ref = doc(f.db, 'customerInvites', phone);
+    try {
+        const snap = await getDoc(ref);
+        if (!snap.exists()) throw new Error('not-invited');
+        if (snap.data().uid !== cred.user.uid) {
+            await updateDoc(ref, { claimed: true, uid: cred.user.uid, claimedAt: serverTimestamp() });
+        }
+    } catch (err) {
+        await f.authMod.signOut(f.auth);
+        throw err;
+    }
+    return cred;
+}
+
+// The customer's saved details: { name, phone, address, delivery, deliverySub }
+export async function loadCustomerProfile(uid) {
+    const f = await load();
+    const snap = await f.fsMod.getDoc(f.fsMod.doc(f.db, 'customers', uid));
+    return snap.exists() ? snap.data() : null;
+}
+
+export async function saveCustomerProfile(uid, profile) {
+    const f = await load();
+    const { doc, setDoc, serverTimestamp } = f.fsMod;
+    await setDoc(doc(f.db, 'customers', uid), { ...clean(profile), updatedAt: serverTimestamp() }, { merge: true });
 }
 
 // ---------- Orders ----------

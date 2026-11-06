@@ -1,45 +1,45 @@
 <!DOCTYPE html>
-<link rel="manifest" href="store-manifest.json">
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Nimet Scout Shop</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="store-manifest.json">
+    <!-- Tailwind CSS (built with the Tailwind CLI) -->
+    <link rel="stylesheet" href="css/tailwind.css">
     <!-- FontAwesome Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom Testing CSS -->
+    <!-- Custom CSS (after Tailwind so it can override it) -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="min-h-screen text-gray-800 flex flex-col justify-between antialiased selection:bg-purple-200">
 
     <!-- ================= FIXED TOP HEADER ================= -->
     <header class="fixed top-0 left-0 right-0 z-40 bg-[#7414DC] text-white px-4 py-3 shadow-md flex items-center justify-between">
-        <div class="flex items-center space-x-2.5 cursor-pointer" onclick="switchTab('home')">
+        <div class="flex items-center space-x-2.5 cursor-pointer min-w-0" onclick="switchTab('home')">
             <img src="assets/logo/nimet-scout-store-logo.svg" alt="Nimet Scout Shop" class="w-11 h-11 shrink-0 object-contain"
                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
             <!-- shown only if the logo file is missing -->
             <div class="w-9 h-9 rounded-2xl bg-[#F4A81E] text-white items-center justify-center font-bold text-base shadow-sm shrink-0" style="display:none">
                 <i class="fa-solid fa-compass"></i>
             </div>
-            <div>
-                <h1 class="font-black text-sm tracking-wide leading-tight" data-i18n="app_name">Nimet Scout Shop</h1>
-                <p class="text-[9px] text-amber-200 font-semibold tracking-wider uppercase" data-i18n="app_tagline">Official Gear & Custom Woggles</p>
+            <div class="min-w-0">
+                <h1 class="font-black text-sm tracking-wide leading-tight truncate" data-i18n="app_name">Nimet Scout Shop</h1>
+                <p class="text-[9px] text-amber-200 font-semibold tracking-wider uppercase truncate" data-i18n="app_tagline">Official Gear & Custom Woggles</p>
             </div>
         </div>
 
-        <div class="flex items-center space-x-2">
-            <!-- Language Switcher Sliding Pill -->
-            <div class="bg-black/20 backdrop-blur-sm border border-white/20 rounded-full p-1 flex items-center relative cursor-pointer select-none shadow-inner" onclick="toggleLanguage()">
-                <div id="lang-slider-pill" class="absolute top-1 bottom-1 left-[62px] w-[56px] bg-[#F4A81E] rounded-full transition-all duration-300 ease-out shadow-md"></div>
-                <button id="lang-btn-en" class="relative z-10 w-[56px] py-1 text-[11px] font-black tracking-wider transition-colors duration-300 text-purple-200 flex items-center justify-center gap-1">
-                    <span>🇬🇧</span> EN
-                </button>
-                <button id="lang-btn-kh" class="relative z-10 w-[56px] py-1 text-[11px] font-black tracking-wider transition-colors duration-300 text-gray-900 flex items-center justify-center gap-1">
-                    <span>🇰🇭</span> KH
-                </button>
-            </div>
+        <div class="flex items-center space-x-2 shrink-0">
+            <!-- Language: shows the flag when Khmer is on, "EN" when English is on. Tap to switch. -->
+            <button type="button" id="lang-toggle" onclick="toggleLanguage()" aria-label="Language" class="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition-all active:scale-95 select-none" style="min-height:0">
+                <span id="lang-label" class="text-xl leading-none">🇰🇭</span>
+            </button>
+
+            <!-- Account Button -->
+            <button type="button" id="account-btn" aria-label="Account" class="relative w-10 h-10 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition-all active:scale-95" style="min-height:0">
+                <i class="fa-solid fa-user text-white text-base"></i>
+                <span id="account-badge" class="hidden absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#7414DC]"></span>
+            </button>
 
             <!-- Cart Button -->
             <button onclick="toggleCartModal(true)" class="relative w-10 h-10 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition-all active:scale-95">
@@ -238,6 +238,70 @@
             <div class="p-3 bg-gray-50 border-t flex justify-between items-center">
                 <p class="font-black text-lg" id="cart-total-price">$0.00</p>
                 <button id="btn-clear-cart" class="px-3 py-1.5 bg-rose-100 text-rose-700 font-bold text-xs rounded-lg" data-i18n="cart_clear">Clear Cart</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Modal (phone number + password) -->
+    <div id="account-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center hidden">
+        <div class="bg-white w-full max-w-lg rounded-t-3xl max-h-[90vh] flex flex-col overflow-hidden animate-slide-up">
+            <div class="px-5 py-3 bg-[#7414DC] text-white flex justify-between items-center">
+                <h3 class="font-bold text-sm" data-i18n="account_title">My Account</h3>
+                <button type="button" id="account-modal-close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 flex-1 overflow-y-auto space-y-4" style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
+
+                <!-- Signed out: phone number -> password (or create password the first time) -->
+                <div id="account-auth-view">
+                    <form id="account-auth-form" class="space-y-3" novalidate>
+                        <p id="account-auth-hint" class="text-xs text-gray-600"></p>
+                        <input type="tel" id="account-phone" inputmode="tel" autocomplete="username" placeholder="Phone number" data-i18n-placeholder="account_phone_placeholder" class="w-full px-3 py-2 border rounded-xl text-base">
+                        <div id="account-password-wrap" class="hidden space-y-2">
+                            <input type="password" id="account-password" autocomplete="current-password" placeholder="Password" data-i18n-placeholder="account_password_placeholder" class="w-full px-3 py-2 border rounded-xl text-base">
+                            <input type="password" id="account-password2" autocomplete="new-password" placeholder="Confirm password" data-i18n-placeholder="account_password2_placeholder" class="hidden w-full px-3 py-2 border rounded-xl text-base">
+                        </div>
+                        <p id="account-auth-message" class="hidden"></p>
+                        <button type="submit" id="account-submit-btn" class="w-full py-3 bg-[#7414DC] text-white font-bold rounded-xl text-sm active:scale-[0.98] transition-all disabled:opacity-60">
+                            <span id="account-submit-text">Continue</span>
+                        </button>
+                        <div class="flex items-center justify-between gap-3">
+                            <button type="button" id="account-forgot-btn" class="hidden text-xs font-semibold text-[#7414DC] underline" style="min-height:0" data-i18n="account_forgot">Forgot password?</button>
+                            <button type="button" id="account-back-btn" class="hidden text-xs font-semibold text-gray-500 underline ml-auto" style="min-height:0" data-i18n="account_change_number">Use a different number</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Signed in -->
+                <div id="account-portal-view" class="hidden space-y-4">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="min-w-0">
+                            <p id="account-user-name" class="font-black text-sm text-gray-900 truncate"></p>
+                            <p id="account-user-email" class="text-xs text-gray-500 truncate"></p>
+                        </div>
+                        <button type="button" id="account-signout-btn" class="shrink-0 px-3 py-2 rounded-xl bg-gray-100 text-gray-700 text-xs font-bold" style="min-height:0" data-i18n="account_signout">Sign out</button>
+                    </div>
+
+                    <div id="account-pane-switch" class="grid grid-cols-2 gap-2 bg-gray-100 rounded-2xl p-1">
+                        <button type="button" id="account-tab-orders" class="py-2 rounded-xl text-xs font-black" style="min-height:0"><span data-i18n="account_tab_orders">My Orders</span> <span id="account-orders-count" class="opacity-70"></span></button>
+                        <button type="button" id="account-tab-settings" class="py-2 rounded-xl text-xs font-black" style="min-height:0" data-i18n="account_tab_settings">Settings</button>
+                    </div>
+
+                    <div id="account-pane-orders">
+                        <div id="account-orders-list" class="space-y-3"></div>
+                    </div>
+
+                    <div id="account-pane-settings" class="hidden space-y-2">
+                        <p class="text-[11px] text-gray-500" data-i18n="account_settings_note">These details fill the cart form automatically.</p>
+                        <input type="text" id="account-set-name" autocomplete="name" placeholder="Customer Name" data-i18n-placeholder="cart_receiver_name" class="w-full px-3 py-2 border rounded-xl text-base">
+                        <input type="tel" id="account-set-phone" inputmode="tel" autocomplete="tel" placeholder="Phone" data-i18n-placeholder="account_phone_placeholder" class="w-full px-3 py-2 border rounded-xl text-base">
+                        <textarea id="account-set-address" rows="2" autocomplete="street-address" placeholder="Address" data-i18n-placeholder="cart_receiver_address" class="w-full px-3 py-2 border rounded-xl text-base"></textarea>
+                        <label for="account-set-delivery" class="text-[11px] font-bold text-gray-500 uppercase block" data-i18n="account_delivery_label">Delivery method</label>
+                        <select id="account-set-delivery" class="w-full px-3 py-2 border rounded-xl text-base bg-white"></select>
+                        <select id="account-set-zone" class="hidden w-full px-3 py-2 border rounded-xl text-base bg-white"></select>
+                        <p id="account-settings-message" class="hidden"></p>
+                        <button type="button" id="account-save-btn" class="w-full py-3 bg-[#7414DC] text-white font-bold rounded-xl text-sm active:scale-[0.98] transition-all disabled:opacity-60" data-i18n="account_save">Save</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

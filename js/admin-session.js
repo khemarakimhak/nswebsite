@@ -15,6 +15,7 @@ const ADMIN_FLAG = 'nimet_admin';
 let admin = false;          // true once Firebase confirmed this browser is signed in as the owner
 let editingId = null;       // id of the saved order that is open in the cart (null = a new order)
 let editingName = '';
+let editingOwner = null;   // who the opened order belonged to + its status, kept when the order is re-sent
 let lastSaved = null;       // what the cart looked like when it was last saved / opened (to spot unsaved changes)
 let hooks = { toast: () => {}, afterRestore: () => {} };
 
@@ -45,8 +46,24 @@ export function hasUnsaved() {
 export function afterClear() {
     editingId = null;
     editingName = '';
+    editingOwner = null;
     lastSaved = null;
     renderBar();
+}
+
+// The saved order that is open in the cart (null = a new order).
+// "Check Out" in app.js sends the cart as a new order and then deletes this one, by id.
+// Not kept across a page reload on purpose: after a reload "Check Out" simply makes a new order and
+// leaves the old one alone, so a stale link can never delete the wrong order.
+export function getEditingOrder() {
+    if (!editingId) return null;
+    const owner = editingOwner || {};
+    return {
+        id: editingId,
+        userId: owner.userId ?? null,
+        customerUid: owner.customerUid ?? null,
+        status: owner.status || 'new'
+    };
 }
 
 // The fields stored with an order (the cart itself + a few extra fields for the admin lists)
@@ -82,6 +99,7 @@ export async function saveCurrent() {
         updated = true;
     } else {
         editingId = await createOrder({ ...fields, status: 'new' });
+        editingOwner = { userId: null, customerUid: null, status: 'new' };
     }
     editingName = name;
     lastSaved = stable(getSnapshot());
@@ -154,6 +172,7 @@ async function openForEdit(id) {
     restoreSnapshot({ cart: order.cart, receiver: order.receiver });
     editingId = order.id;
     editingName = order.name || '';
+    editingOwner = { userId: order.userId ?? null, customerUid: order.customerUid ?? null, status: order.status || 'new' };
     lastSaved = stable(getSnapshot());
     renderBar();
     hooks.afterRestore();

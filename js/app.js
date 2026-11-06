@@ -38,8 +38,9 @@ import {
 
 import { createReceiptPdf } from './pdf.js';
 import './print.js';   // optional Bluetooth print feature (delete this line + js/print.js + the Print button to remove it)
-import { createOrder, getCurrentUser } from './firebase.js';
-import { startAdminSession } from './admin-session.js';
+import { createOrder, deleteOrder, getCurrentUser, authReady } from './firebase.js';
+import { initAccount, refreshAccount, applyProfileToCart } from './account.js';
+import { startAdminSession, getEditingOrder, afterClear as endEdit } from './admin-session.js';
 import {
     listSaved,
     saveCurrentOrder,
@@ -245,25 +246,18 @@ function refreshPrices() {
     renderSavedList();
     updateModalPrice();
     refreshModalText();
+    refreshAccount();
 }
 
-function updateLangUI(animated = true) {
-    const sliderPill = document.getElementById('lang-slider-pill');
-    const btnEn = document.getElementById('lang-btn-en');
-    const btnKh = document.getElementById('lang-btn-kh');
-
-    if (!sliderPill || !btnEn || !btnKh) return;
-
-    sliderPill.style.transition = animated ? 'all 0.3s ease-out' : 'none';
-
-    if (currentLang === 'en') {
-        sliderPill.style.left = '4px';
-        btnEn.className = "relative z-10 w-[56px] py-1 text-[11px] font-black tracking-wider transition-colors duration-300 text-gray-900 flex items-center justify-center gap-1";
-        btnKh.className = "relative z-10 w-[56px] py-1 text-[11px] font-black tracking-wider transition-colors duration-300 text-purple-200 flex items-center justify-center gap-1";
+function updateLangUI() {
+    const label = document.getElementById('lang-label');
+    if (!label) return;
+    if (currentLang === 'kh') {
+        label.textContent = '🇰🇭';
+        label.className = 'text-xl leading-none';
     } else {
-        sliderPill.style.left = '62px';
-        btnEn.className = "relative z-10 w-[56px] py-1 text-[11px] font-black tracking-wider transition-colors duration-300 text-purple-200 flex items-center justify-center gap-1";
-        btnKh.className = "relative z-10 w-[56px] py-1 text-[11px] font-black tracking-wider transition-colors duration-300 text-gray-900 flex items-center justify-center gap-1";
+        label.textContent = 'EN';
+        label.className = 'text-[13px] font-black tracking-wider leading-none';
     }
 }
 
@@ -734,6 +728,7 @@ window.addEventListener('DOMContentLoaded', () => {
             if (!entry) return;
             if (hasUnsavedItems() && !confirm(t('confirm_replace_cart', { name: entry.name }))) return;
             loadSavedOrder(entry.id);
+            endEdit();
             fillReceiverForm();
             updateCartStateUI();
             renderSavedList();
@@ -884,6 +879,8 @@ window.addEventListener('DOMContentLoaded', () => {
             // Clear the cart AND the customer details directly without asking to save
             clearCartState();
             clearReceiverState();
+            endEdit();
+            applyProfileToCart();
             fillReceiverForm();
             updateCartStateUI();
             showToast(t('toast_cleared'));
@@ -904,18 +901,39 @@ window.addEventListener('DOMContentLoaded', () => {
             const stdEntries = getValidStandardEntries();
             const itemCount = stdEntries.reduce((s, e) => s + e.qty, 0) + cart.customWoggles.reduce((s, w) => s + (w.qty || 1), 0);
             const totalUsd = getCartTotal();
-            const uid = getCurrentUser()?.uid ?? null;
-            await createOrder({ name, phone: receiver.phone || '', address: receiver.address || '', source: receiver.source || '', receiver: { ...receiver, name }, cart: JSON.parse(JSON.stringify(cart)), itemCount, totalUsd, status: 'new', userId: uid, customerUid: uid, searchText: `${name} ${receiver.phone || ''}`.toLowerCase() });
+            const uid = (await authReady())?.uid ?? null;
+            // Owner re-sending an order that was opened with "Edit / Add items": keep who it belongs to and its status
+            const editing = getEditingOrder();
+            const ownerUid = editing ? editing.userId : uid;
+            const customerUid = editing ? editing.customerUid : uid;
+            await createOrder({ name, phone: receiver.phone || '', address: receiver.address || '', source: receiver.source || '', receiver: { ...receiver, name }, cart: JSON.parse(JSON.stringify(cart)), itemCount, totalUsd, status: editing ? editing.status : 'new', userId: ownerUid, customerUid, searchText: `${name} ${receiver.phone || ''}`.toLowerCase() });
+
+            // The new order is saved. Only now remove the old version, by its id (never by name).
+            let oldRemoved = true;
+            if (editing) {
+                try { await deleteOrder(editing.id); }
+                catch (err) { oldRemoved = false; console.warn('Could not delete the old version of the order:', err); }
+            }
+            endEdit();
+
             try { await navigator.clipboard.writeText(generateFormattedReceipt()); } catch (_) {}
-            clearCartState(); clearReceiverState(); fillReceiverForm(); updateCartStateUI();
+            clearCartState(); clearReceiverState(); applyProfileToCart(); fillReceiverForm(); updateCartStateUI();
             window.toggleCartModal(false);
-            showToast('Order sent to Admin successfully!');
+            showToast(!editing ? 'Order sent to Admin successfully!'
+                : oldRemoved ? 'Order sent. The old version was removed.'
+                : 'Order sent, but the old version could not be deleted. Please delete it in Admin.');
         } catch (err) {
             console.error('Checkout failed:', err);
             showToast(`Checkout failed: ${err.message || 'Please check connection'}`);
         } finally {
             if (btn) { btn.disabled = false; btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span data-i18n="cart_checkout">Check Out</span>`; }
         }
+    });
+
+    // Customer account (phone number + password); fills the cart form from the saved details
+    initAccount({
+        toast: showToast,
+        onReceiverChanged: () => { fillReceiverForm(); updateCartStateUI(); }
     });
 
     // Admin session (edit orders from admin.html, inline save icon)
