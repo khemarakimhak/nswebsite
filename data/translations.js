@@ -91,6 +91,8 @@ export const TRANSLATIONS = {
     delivery_pickup:       { en: "Pick up",                             kh: "មកយកផ្ទាល់" },
     delivery_free:         { en: "Free",                                kh: "ឥតគិតថ្លៃ" },
     // Where the customer ordered from. Shown after the receiver name, e.g. "Sophie (TikTok)"
+    cart_source_title:     { en: "Chat to Nimet through :",               kh: "បានឆាតមកនិម្មិតតាមៈ" },
+    toast_need_source:     { en: "Please indicate the platform you chat to us", kh: "សូមបញ្ជាក់បណ្តាញសង្គមដែលអ្នកបានឆាតមកនិម្មិត" },
     source_page:           { en: "Page",                                kh: "Page" },
     source_telegram:       { en: "Telegram",                            kh: "Telegram" },
     source_tiktok:         { en: "TikTok",                              kh: "TikTok" },

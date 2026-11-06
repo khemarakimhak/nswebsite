@@ -10,7 +10,8 @@ import {
     sendReset,
     watchOrders,
     updateOrder,
-    deleteOrder
+    deleteOrder,
+    localPhone
 } from './firebase.js';
 
 import { formatPrice } from './currency.js';
@@ -290,7 +291,10 @@ function filterOrders() {
             const name = (o.name || (o.receiver && o.receiver.name) || '').toLowerCase();
             const phone = (o.phone || (o.receiver && o.receiver.phone) || '').toLowerCase();
             const addr = (o.address || (o.receiver && o.receiver.address) || '').toLowerCase();
-            return name.includes(q) || phone.includes(q) || addr.includes(q);
+            // The phone number of the account that sent the order: "012345678" or "85512345678" both find it
+            const acc = String(o.accountPhone || '');
+            const accMatch = acc && (acc.includes(q) || localPhone(acc).includes(q));
+            return name.includes(q) || phone.includes(q) || addr.includes(q) || accMatch;
         });
     }
     return list;
@@ -349,6 +353,23 @@ function renderOrders() {
         const itemsHtml = formatItemsSummary(order);
         const sourceHtml = renderSourceIcon(receiver.source || order.source);
 
+        // Who sent it: the sign-in phone number of the customer account. Always shown when the order has one.
+        // Green = same as the receiver phone in the cart. Red = different (only a visual cue, nothing is blocked:
+        // someone may be ordering or collecting on behalf of another person).
+        const accountPhone = String(order.accountPhone || '');
+        const lastDigits = v => String(v || '').replace(/\D/g, '').slice(-8);
+        const accountDiffers = !!accountPhone && lastDigits(accountPhone) !== lastDigits(receiver.phone || order.phone);
+        // First row of the customer information box: tick = same phone as the account, exclamation = different
+        const accountHtml = accountPhone ? `
+                    <div class="col-span-2 flex items-center gap-1.5 pb-1.5 border-b border-purple-100/70">
+                        ${accountDiffers
+                            ? `<i class="fa-solid fa-triangle-exclamation text-rose-600 text-sm" title="The phone in this order is different from the account that sent it"></i>
+                               <span class="font-bold text-rose-600">${escapeHTML(localPhone(accountPhone))}</span>`
+                            : `<i class="fa-solid fa-circle-check text-emerald-600 text-sm" title="Same phone as the account that sent this order"></i>
+                               <span class="font-bold text-gray-600">${escapeHTML(localPhone(accountPhone))}</span>`}
+                        <span class="text-[10px] uppercase font-bold text-gray-400">Account</span>
+                    </div>` : '';
+
         return `
             <div class="bg-white rounded-2xl border border-purple-100 p-4 shadow-sm space-y-3" data-order-id="${order.id}">
                 <!-- Top: Name, Source, Date & Status -->
@@ -376,7 +397,7 @@ function renderOrders() {
                 </div>
 
                 <!-- Middle: Contact & Delivery -->
-                <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 bg-purple-50/40 p-2.5 rounded-xl">
+                <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 bg-purple-50/40 p-2.5 rounded-xl">${accountHtml}
                     <div>
                         <span class="text-[10px] uppercase font-bold text-gray-400 block">Phone</span>
                         ${phone !== '-' ? `<a href="tel:${phone}" class="font-bold text-[#7414DC]"><i class="fa-solid fa-phone text-[10px]"></i> ${phone}</a>` : '-'}

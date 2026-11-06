@@ -62,6 +62,7 @@ export function getEditingOrder() {
         id: editingId,
         userId: owner.userId ?? null,
         customerUid: owner.customerUid ?? null,
+        accountPhone: owner.accountPhone || '',
         status: owner.status || 'new'
     };
 }
@@ -172,7 +173,7 @@ async function openForEdit(id) {
     restoreSnapshot({ cart: order.cart, receiver: order.receiver });
     editingId = order.id;
     editingName = order.name || '';
-    editingOwner = { userId: order.userId ?? null, customerUid: order.customerUid ?? null, status: order.status || 'new' };
+    editingOwner = { userId: order.userId ?? null, customerUid: order.customerUid ?? null, accountPhone: order.accountPhone || '', status: order.status || 'new' };
     lastSaved = stable(getSnapshot());
     renderBar();
     hooks.afterRestore();

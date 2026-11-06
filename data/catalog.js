@@ -29,6 +29,9 @@
 //     If a choice picture is missing, the main picture is shown instead.
 //     optionsTitle: "class"  changes the menu wording (default is "color").
 //
+//  SHOP ITEMS ONLY: add  tags: ["uniform", "camping"]  to put an item in the shop tabs
+//  (see SHOP_TABS in the Shop section below).
+//
 //  HOW TO REMOVE AN ITEM: delete its whole line.
 //  If the picture is missing, an icon is shown instead (nothing breaks).
 // =====================================================================
@@ -81,18 +84,37 @@ export const DELIVERY = {
 
 // ---------------------------------------------------------------------
 //  SECTION: SHOP
+//
+//  TABS above the shop products (only the Shop page has tabs).
+//     id     = a short name with no spaces (lowercase). Items use it in their  tags.
+//     name   = what customers see (English);   nameKh = Khmer (leave "" to show English)
+//  The FIRST tab must be  id: "all"  - it shows every product and is the tab that is open
+//  when the page loads. To add a tab, copy one line and change id / name / nameKh.
+//  To remove a tab, delete its line.
+//
+//  TAGS on an item:  tags: ["uniform", "essential"]
+//  An item can have as many tags as you like, so it shows in each of those tabs.
+//  An item with no tags only shows in "All Products".
+//  (The Khmer tab names are a first DRAFT. Please check and correct them.)
 // ---------------------------------------------------------------------
+export const SHOP_TABS = [
+    { id: "all",       name: "All Products",    nameKh: "ទំនិញទាំងអស់" },
+    { id: "essential", name: "Scout Essential", nameKh: "សម្ភារៈកាយរឹទ្ធិចាំបាច់" },
+    { id: "uniform",   name: "Uniform",         nameKh: "ឯកសណ្ឋាន" },
+    { id: "camping",   name: "Camping",         nameKh: "បោះជំរំ" },
+];
+
 export const SHOP_ITEMS = [
-    { name: "Leather Cambodia Scout", nameKh: "ផ្លាកស្បែក កាយរឹទ្ធិជាតិ", price: 2.50, image: "leather-cambodia-scout.jpg"   },
-    { name: "Leather World Scout", nameKh: "ផ្លាកស្បែក World Scout",   price: 2.50,  image: "leather-world-scout.jpg" },
+    { name: "Leather Cambodia Scout", nameKh: "ផ្លាកស្បែក កាយរឹទ្ធិជាតិ", price: 2.50, image: "leather-cambodia-scout.jpg", tags: ["uniform"] },
+    { name: "Leather World Scout", nameKh: "ផ្លាកស្បែក World Scout",   price: 2.50,  image: "leather-world-scout.jpg", tags: ["uniform"] },
 
     //scarf
-    { name: "Redcross Scarf",  nameKh: "កន្សែងកាកបាទ",          price: 5.50, image: "redcross-scarf.jpg"  },
-    { name: "Purple Scarf",  nameKh: "កន្សែងស្វាយ",          price: 5.50, image: "purple-scarf.jpg"  },
-    { name: "Red Scarf",     nameKh: "កន្សែងក្រហម",     price: 5.50, image: "red-scarf.jpg"     },
-    { name: "Green Scarf",   nameKh: "កន្សែងបៃតង",      price: 5.50, image: "green-scarf.jpg"   },
-    { name: "Yellow Scarf",  nameKh: "កន្សែងលឿង",       price: 5.50, image: "yellow-scarf.jpg"  },
-    { name: "3 Color Scarf", nameKh: "កន្សែង ៣ឆ្នូត",    price: 7.50, image: "3-color-scarf.jpg" },
+    { name: "Redcross Scarf",  nameKh: "កន្សែងកាកបាទ",          price: 5.50, image: "redcross-scarf.jpg", tags: ["uniform", "essential"] },
+    { name: "Purple Scarf",  nameKh: "កន្សែងស្វាយ",          price: 5.50, image: "purple-scarf.jpg", tags: ["uniform", "essential"] },
+    { name: "Red Scarf",     nameKh: "កន្សែងក្រហម",     price: 5.50, image: "red-scarf.jpg", tags: ["uniform", "essential"] },
+    { name: "Green Scarf",   nameKh: "កន្សែងបៃតង",      price: 5.50, image: "green-scarf.jpg", tags: ["uniform", "essential"] },
+    { name: "Yellow Scarf",  nameKh: "កន្សែងលឿង",       price: 5.50, image: "yellow-scarf.jpg", tags: ["uniform", "essential"] },
+    { name: "3 Color Scarf", nameKh: "កន្សែង ៣ឆ្នូត",    price: 7.50, image: "3-color-scarf.jpg", tags: ["uniform", "essential"] },
 ];
 
 

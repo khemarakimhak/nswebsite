@@ -51,6 +51,7 @@ function makeItems(section, items, fallback) {
             price: Number(it.price) || 0,
             image: imgPath(it.image, section),
             isCustom: false,
+            tags: Array.isArray(it.tags) ? it.tags : [],      // shop tabs (see SHOP_TABS in data/catalog.js)
             ...(hasOptions ? {
                 options: it.options,                        // choice menu (colors, classes...)
                 optionsTitle: it.optionsTitle || 'color',

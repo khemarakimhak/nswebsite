@@ -79,6 +79,8 @@
                 <input type="text" inputmode="search" autocomplete="off" autocapitalize="off" spellcheck="false" data-search="shop" placeholder="Search shop..." data-i18n-placeholder="search_shop" aria-label="Search shop" class="w-full pl-10 pr-11 py-2 rounded-2xl border border-purple-100 bg-white text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-[#7414DC]/40">
                 <button type="button" data-action="clear-search" data-section="shop" aria-label="Clear search" class="hidden absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gray-100 text-gray-500 items-center justify-center active:scale-95" style="min-height:0"><i class="fa-solid fa-xmark text-xs"></i></button>
             </div>
+            <!-- Shop tabs (built from SHOP_TABS in data/catalog.js) -->
+            <div id="shop-tabs" class="flex gap-2 overflow-x-auto pb-1"></div>
             <div class="grid grid-cols-2 gap-3" id="shop-products-grid"></div>
         </section>
 
@@ -203,7 +205,8 @@
                         </button>
                     </div>
                     <!-- Where the customer ordered from: shown after the name, e.g. "Sophie (TikTok)" -->
-                    <div class="grid grid-cols-3 gap-2" id="source-selector">
+                    <p class="text-[11px] font-bold text-gray-500 uppercase pt-1" data-i18n="cart_source_title">Chat to Nimet through :</p>
+                    <div class="grid grid-cols-3 gap-2 rounded-xl" id="source-selector">
                         <button type="button" data-action="select-source" data-value="page" class="py-2 px-1 text-xs font-bold rounded-xl border transition-all flex items-center justify-center gap-1.5 bg-gray-50 text-gray-700 border-gray-200"><i class="fa-brands fa-facebook"></i><span data-i18n="source_page">Page</span></button>
                         <button type="button" data-action="select-source" data-value="telegram" class="py-2 px-1 text-xs font-bold rounded-xl border transition-all flex items-center justify-center gap-1.5 bg-gray-50 text-gray-700 border-gray-200"><i class="fa-brands fa-telegram"></i><span data-i18n="source_telegram">Telegram</span></button>
                         <button type="button" data-action="select-source" data-value="tiktok" class="py-2 px-1 text-xs font-bold rounded-xl border transition-all flex items-center justify-center gap-1.5 bg-gray-50 text-gray-700 border-gray-200"><i class="fa-brands fa-tiktok"></i><span data-i18n="source_tiktok">TikTok</span></button>

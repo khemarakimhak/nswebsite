@@ -9,6 +9,7 @@ import {
     optionImagePath,
     imgPath
 } from './products.js';
+import { SHOP_TABS } from '../data/catalog.js';
 
 import {
     loadCartFromStorage,
@@ -38,7 +39,7 @@ import {
 
 import { createReceiptPdf } from './pdf.js';
 import './print.js';   // optional Bluetooth print feature (delete this line + js/print.js + the Print button to remove it)
-import { createOrder, deleteOrder, getCurrentUser, authReady } from './firebase.js';
+import { createOrder, deleteOrder, getCurrentUser, authReady, isCustomerUser, phoneFromUser } from './firebase.js';
 import { initAccount, refreshAccount, applyProfileToCart, toggleAccountModal } from './account.js';
 import { startAdminSession, getEditingOrder, afterClear as endEdit } from './admin-session.js';
 import {
@@ -55,7 +56,7 @@ import {
 import { formatPrice } from './currency.js';
 import { DELIVERY } from '../data/catalog.js';
 import { SCOUT_LOGO_PATHS, SCOUT_VIEWBOX } from './icons.js';
-import { t, setLang, productName, optionLabel, optionTitleKey, applyStaticTranslations } from './i18n.js';
+import { t, setLang, getLang, productName, optionLabel, optionTitleKey, applyStaticTranslations } from './i18n.js';
 import { NEWS } from '../data/news.js';
 
 // SVG Definitions for icons
@@ -127,12 +128,34 @@ const SECTIONS = {
 };
 const searchQueries = { woggle: '', shop: '', pin: '', badge: '' };
 
+// ---------- Shop tabs (SHOP_TABS in data/catalog.js). "all" is open when the page loads. ----------
+let shopTab = 'all';
+
+function shopProductsForTab() {
+    if (shopTab === 'all') return SHOP_PRODUCTS;
+    return SHOP_PRODUCTS.filter(p => (p.tags || []).includes(shopTab));
+}
+
+function renderShopTabs() {
+    const bar = document.getElementById('shop-tabs');
+    if (!bar) return;
+    if (!SHOP_TABS.some(tab => tab.id === shopTab)) shopTab = 'all';
+    const kh = getLang() === 'kh';
+    bar.innerHTML = SHOP_TABS.map(tab => {
+        const active = tab.id === shopTab;
+        const label = escapeHTML((kh && tab.nameKh) ? tab.nameKh : tab.name);
+        return `<button type="button" data-action="select-shop-tab" data-value="${escapeHTML(tab.id)}" class="shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full border text-xs font-bold transition-all ${active ? 'bg-[#7414DC] text-white border-[#7414DC]' : 'bg-white text-gray-700 border-purple-100'}" style="min-height:0">${label}</button>`;
+    }).join('');
+}
+
 function renderSection(section) {
-    renderGrid(`${section}-products-grid`, SECTIONS[section], searchQueries[section]);
+    const list = section === 'shop' ? shopProductsForTab() : SECTIONS[section];
+    renderGrid(`${section}-products-grid`, list, searchQueries[section]);
 }
 
 function renderAllGrids() {
     Object.keys(SECTIONS).forEach(renderSection);
+    renderShopTabs();
 }
 
 function updateClearButton(section) {
@@ -655,16 +678,32 @@ export function updateCartStateUI() {
 }
 
 // Toast Notification
-export function showToast(msg) {
+let toastTimer = null;
+export function showToast(msg, ms = 2000) {
     const toast = document.getElementById('toast');
     const toastText = document.getElementById('toast-text');
     if (!toast || !toastText) return;
 
     toastText.innerText = msg;
     toast.classList.remove('opacity-0', 'pointer-events-none');
-    setTimeout(() => {
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
         toast.classList.add('opacity-0', 'pointer-events-none');
-    }, 2000);
+    }, ms);
+}
+
+// The customer must say where they chat to Nimet (Page / Telegram / TikTok) before copying or sending the receipt.
+// Returns true (and points at the buttons) when it is missing.
+function sourceMissing() {
+    if (getReceiver().source) return false;
+    showToast(t('toast_need_source'), 3500);
+    const box = document.getElementById('source-selector');
+    if (box) {
+        box.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        box.classList.add('ring-2', 'ring-rose-400', 'ring-offset-2');
+        setTimeout(() => box.classList.remove('ring-2', 'ring-rose-400', 'ring-offset-2'), 3500);
+    }
+    return true;
 }
 
 // ---------- Setup ----------
@@ -742,6 +781,10 @@ window.addEventListener('DOMContentLoaded', () => {
             deleteSavedOrder(entry.id);
             renderSavedList();
             showToast(t('toast_deleted'));
+        } else if (action === 'select-shop-tab') {
+            shopTab = target.getAttribute('data-value') || 'all';
+            renderShopTabs();
+            renderSection('shop');
         } else if (action === 'select-source') {
             setSource(target.getAttribute('data-value'));
             renderSource();
@@ -841,6 +884,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 showToast(t('toast_cart_empty'));
                 return;
             }
+            if (sourceMissing()) return;
             const text = generateFormattedReceipt();
             navigator.clipboard.writeText(text).then(() => {
                 showToast(t('toast_copied'));
@@ -908,6 +952,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const receiver = getReceiver();
         const name = (receiver.name || '').trim();
         if (!name) { showToast(t('toast_need_name')); document.getElementById('receiver-name')?.focus(); return; }
+        if (sourceMissing()) return;
 
         const btn = document.getElementById('checkout-btn');
         if (btn) { btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Submitting...`; }
@@ -921,7 +966,10 @@ window.addEventListener('DOMContentLoaded', () => {
             const editing = getEditingOrder();
             const ownerUid = editing ? editing.userId : uid;
             const customerUid = editing ? editing.customerUid : uid;
-            await createOrder({ name, phone: receiver.phone || '', address: receiver.address || '', source: receiver.source || '', receiver: { ...receiver, name }, cart: JSON.parse(JSON.stringify(cart)), itemCount, totalUsd, status: editing ? editing.status : 'new', userId: ownerUid, customerUid, searchText: `${name} ${receiver.phone || ''}`.toLowerCase() });
+            // The phone number of the ACCOUNT that sent the order (the phone typed in the cart can be anything).
+            // The database rules check that it matches the signed-in customer, so it cannot be faked.
+            const accountPhone = editing ? (editing.accountPhone || '') : (isCustomerUser(signedInUser) ? phoneFromUser(signedInUser) : '');
+            await createOrder({ name, phone: receiver.phone || '', address: receiver.address || '', source: receiver.source || '', receiver: { ...receiver, name }, cart: JSON.parse(JSON.stringify(cart)), itemCount, totalUsd, status: editing ? editing.status : 'new', userId: ownerUid, customerUid, accountPhone, searchText: `${name} ${receiver.phone || ''} ${accountPhone}`.toLowerCase() });
 
             // The new order is saved. Only now remove the old version, by its id (never by name).
             let oldRemoved = true;

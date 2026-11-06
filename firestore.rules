@@ -74,8 +74,11 @@ service cloud.firestore {
 
       // Only the owner, or a customer who has finished creating their account, can send an order.
       // Guests can fill the cart and copy the receipt, but cannot send it. A customer's order must carry their own uid.
+      // The order must also carry the phone number of the account that sent it, so spam can be traced.
       allow create: if isAdmin()
-          || (ownsInvite() && request.resource.data.userId == request.auth.uid);
+          || (ownsInvite()
+              && request.resource.data.userId == request.auth.uid
+              && request.resource.data.get('accountPhone', '') == customerPhone());
 
       // Signed-in customers can read their own orders
       allow read: if request.auth != null && (
