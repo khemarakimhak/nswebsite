@@ -144,7 +144,7 @@ function renderShopTabs() {
     bar.innerHTML = SHOP_TABS.map(tab => {
         const active = tab.id === shopTab;
         const label = escapeHTML((kh && tab.nameKh) ? tab.nameKh : tab.name);
-        return `<button type="button" data-action="select-shop-tab" data-value="${escapeHTML(tab.id)}" class="shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full border text-xs font-bold transition-all ${active ? 'bg-[#7414DC] text-white border-[#7414DC]' : 'bg-white text-gray-700 border-purple-100'}" style="min-height:0">${label}</button>`;
+        return `<button type="button" data-action="select-shop-tab" data-value="${escapeHTML(tab.id)}" class="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl border text-xs font-bold transition-all ${active ? 'bg-[#7414DC] text-white border-[#7414DC]' : 'bg-white text-gray-700 border-purple-100'}" style="min-height:0">${label}</button>`;
     }).join('');
 }
 
