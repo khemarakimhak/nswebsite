@@ -9,7 +9,7 @@ import {
     optionImagePath,
     imgPath
 } from './products.js';
-import { SHOP_TABS } from '../data/catalog.js';
+import { SHOP_TABS, PIN_TABS } from '../data/catalog.js';
 
 import {
     loadCartFromStorage,
@@ -91,7 +91,7 @@ function renderGrid(containerId, allProducts, query = '') {
 
     if (products.length === 0) {
         const msg = q ? t('search_no_match') : t('section_empty');
-        container.innerHTML = `<p class="col-span-2 text-xs text-gray-400 italic text-center py-6">${msg}</p>`;
+        container.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-6" style="grid-column:1/-1">${msg}</p>`;
         return;
     }
 
@@ -128,34 +128,42 @@ const SECTIONS = {
 };
 const searchQueries = { woggle: '', shop: '', pin: '', badge: '' };
 
-// ---------- Shop tabs (SHOP_TABS in data/catalog.js). "all" is open when the page loads. ----------
-let shopTab = 'all';
+// ---------- Tabs above the product grids (SHOP_TABS / PIN_TABS in data/catalog.js) ----------
+// "all" is open when the page loads. A section with only the "all" tab hides its tab bar.
+const TABS = { shop: SHOP_TABS, pin: PIN_TABS };
+const activeTab = { shop: 'all', pin: 'all' };
 
-function shopProductsForTab() {
-    if (shopTab === 'all') return SHOP_PRODUCTS;
-    return SHOP_PRODUCTS.filter(p => (p.tags || []).includes(shopTab));
+function productsForTab(section) {
+    const list = SECTIONS[section];
+    const tab = activeTab[section];
+    if (!TABS[section] || tab === 'all') return list;
+    return list.filter(p => (p.tags || []).includes(tab));
 }
 
-function renderShopTabs() {
-    const bar = document.getElementById('shop-tabs');
-    if (!bar) return;
-    if (!SHOP_TABS.some(tab => tab.id === shopTab)) shopTab = 'all';
+function renderTabs(section) {
+    const bar = document.getElementById(`${section}-tabs`);
+    const tabs = TABS[section];
+    if (!bar || !tabs) return;
+    if (!tabs.some(tab => tab.id === activeTab[section])) activeTab[section] = 'all';
+    const hide = tabs.length < 2;
+    bar.classList.toggle('hidden', hide);
+    if (hide) { bar.innerHTML = ''; return; }
     const kh = getLang() === 'kh';
-    bar.innerHTML = SHOP_TABS.map(tab => {
-        const active = tab.id === shopTab;
+    bar.innerHTML = tabs.map(tab => {
+        const active = tab.id === activeTab[section];
         const label = escapeHTML((kh && tab.nameKh) ? tab.nameKh : tab.name);
-        return `<button type="button" data-action="select-shop-tab" data-value="${escapeHTML(tab.id)}" class="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl border text-xs font-bold transition-all ${active ? 'bg-[#7414DC] text-white border-[#7414DC]' : 'bg-white text-gray-700 border-purple-100'}" style="min-height:0">${label}</button>`;
+        return `<button type="button" data-action="select-tab" data-section="${section}" data-value="${escapeHTML(tab.id)}" class="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl border text-xs font-bold transition-all ${active ? 'bg-[#7414DC] text-white border-[#7414DC]' : 'bg-white text-gray-700 border-purple-100'}" style="min-height:0">${label}</button>`;
     }).join('');
 }
 
 function renderSection(section) {
-    const list = section === 'shop' ? shopProductsForTab() : SECTIONS[section];
-    renderGrid(`${section}-products-grid`, list, searchQueries[section]);
+    renderGrid(`${section}-products-grid`, productsForTab(section), searchQueries[section]);
 }
 
 function renderAllGrids() {
     Object.keys(SECTIONS).forEach(renderSection);
-    renderShopTabs();
+    renderTabs('shop');
+    renderTabs('pin');
 }
 
 function updateClearButton(section) {
@@ -781,10 +789,11 @@ window.addEventListener('DOMContentLoaded', () => {
             deleteSavedOrder(entry.id);
             renderSavedList();
             showToast(t('toast_deleted'));
-        } else if (action === 'select-shop-tab') {
-            shopTab = target.getAttribute('data-value') || 'all';
-            renderShopTabs();
-            renderSection('shop');
+        } else if (action === 'select-tab') {
+            const section = target.getAttribute('data-section');
+            activeTab[section] = target.getAttribute('data-value') || 'all';
+            renderTabs(section);
+            renderSection(section);
         } else if (action === 'select-source') {
             setSource(target.getAttribute('data-value'));
             renderSource();

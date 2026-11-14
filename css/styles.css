@@ -103,3 +103,35 @@ button, header, nav, #toast {
 display: none !important;
 }
 }
+
+/* ===== Responsive layout (desktop / tablet) ===== */
+
+/* Page width: phone-sized on small screens, wider on tablet and desktop */
+.page-wrap {
+max-width: 32rem;
+}
+@media (min-width: 640px) {
+.page-wrap { max-width: 72rem; }
+}
+
+/* Product grids: 2 columns on phones, more as the screen grows */
+.product-grid {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 0.75rem;
+}
+@media (min-width: 640px) {
+.product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 900px) {
+.product-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+}
+@media (min-width: 1200px) {
+.product-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+
+/* Keep the news feed readable instead of stretching across a desktop screen */
+#tab-home-view {
+max-width: 42rem;
+margin-inline: auto;
+}

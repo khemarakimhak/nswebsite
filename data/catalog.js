@@ -29,8 +29,8 @@
 //     If a choice picture is missing, the main picture is shown instead.
 //     optionsTitle: "class"  changes the menu wording (default is "color").
 //
-//  SHOP ITEMS ONLY: add  tags: ["uniform", "camping"]  to put an item in the shop tabs
-//  (see SHOP_TABS in the Shop section below).
+//  SHOP AND PIN ITEMS: add  tags: ["uniform", "camping"]  to put an item in the section's tabs
+//  (see SHOP_TABS in the Shop section and PIN_TABS in the Pin section below).
 //
 //  HOW TO REMOVE AN ITEM: delete its whole line.
 //  If the picture is missing, an icon is shown instead (nothing breaks).
@@ -120,9 +120,24 @@ export const SHOP_ITEMS = [
 
 // ---------------------------------------------------------------------
 //  SECTION: PIN
+//
+//  TABS above the pin products work exactly like the Shop tabs (see SHOP_TABS above):
+//     id = short lowercase name, used in an item's  tags.   name = English,  nameKh = Khmer.
+//  The FIRST tab must be  id: "all".  While "all" is the only tab, the tab bar stays hidden.
+//  To show tabs: remove the // in front of the example lines (or add your own), then add
+//  tags: ["scout"]  to the pins that belong in that tab.
+//  An item with no tags only shows in "All Products".
 // ---------------------------------------------------------------------
+export const PIN_TABS = [
+    { id: "all", name: "All Products", nameKh: "កន្លាស់ទាំងអស់" },
+    { id: "scout",   name: "Scout Pins",   nameKh: "ស្កោត" },
+    { id: "camping", name: "Camping Pins", nameKh: "បោះតង់" },
+    { id: "wing", name: "Wing Pins", nameKh: "ស្ទាំង" },
+    { id: "peace", name: "Peace Pins", nameKh: "ព្រាប​ និងសន្តិភាព" },
+];
+
 export const PIN_ITEMS = [
-    { name: "Scout wing Pin",     nameKh: "កន្លាស់ស្ទាំង ស្កោត",           price: 3.00, image: "pin-scout-wing.jpg"  },
+    { name: "Scout wing Pin",     nameKh: "កន្លាស់ស្ទាំង ស្កោត",           price: 3.00, image: "pin-scout-wing.jpg", tags: ["wing", "scout"] },
 ];
 
 
